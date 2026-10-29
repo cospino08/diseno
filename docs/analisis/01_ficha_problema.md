@@ -143,4 +143,4 @@ El proyecto se considera exitoso si:
 | ¿Qué ocurre si un médico modifica su horario con reservas? | La base de datos rechaza cambiar o desactivar una franja con cita activa. Primero se cancela la cita (queda en el historial y el paciente la ve cancelada). Ver P12 del plan y CP-12. |
 | ¿Cómo se evita la doble reserva simultánea? | Índice único parcial sobre `appointments(schedule_id)` para citas no canceladas y RPC `reservar_cita` atómica con bloqueo `for update`. La segunda solicitud recibe `FRANJA_OCUPADA`. Ver P2 y P7 del plan y CP-02. |
 | ¿Qué datos son necesarios y cuáles sería irresponsable recopilar? | Necesarios: nombres, documento, teléfono, fecha de nacimiento, correo (en Auth) y un motivo breve de máximo 200 caracteres. Irresponsable: diagnósticos, historia clínica, medicamentos, tipo de sangre, aseguradora y dirección. |
-| ¿Qué parte queda fuera del MVP? | Ver 1.9. |
+| ¿Qué parte queda fuera del MVP? | Ver 1.9. Varias exclusiones (pagos, opiniones, recordatorios, telemedicina, sanciones por inasistencia) salen de la comparación de plataformas (`05_investigacion.md`, hallazgos H7 a H10). |
