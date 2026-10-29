@@ -21,28 +21,36 @@ valida el rol por dentro. **P3 y P4: ya pueden probar contra la base real.**
 
 ## P1: Análisis y documentación
 
-**Hecho:**
+Rama `p1/ronda2`.
 
-- Fase 1 en `docs/analisis/` (PR #1, rama `p1/analisis`): ficha del problema, objetivos
-  OE-1..OE-5, alcance, exclusiones, supuestos, criterios de éxito, matriz de actores,
-  AS IS / TO BE en Mermaid y matriz de riesgos R1..R11.
-- Fase 2 en `docs/requisitos/` (rama `p1/requisitos`): RF-01..RF-21, RNF-01..RNF-11,
-  diagrama de casos de uso y CU-01..CU-12 detallados.
-- `docs/pruebas/plan_pruebas.md`: CP-01..CP-18 del plan + CP-19..CP-27 para que todo RF de
-  prioridad alta tenga prueba.
-- `docs/trazabilidad.md`: necesidad → RF → CU → pantalla → tabla/RPC → CP. Alineada con
-  `docs/contrato_api.md` v1.0.
+**Hecho (ronda 1):** Fase 1 (`docs/analisis/`), Fase 2 (`docs/requisitos/`: RF-01..RF-21,
+RNF-01..RNF-11, CU-01..CU-12), plan de pruebas (CP-01..CP-27) y trazabilidad. En `main`.
+
+**Hecho (ronda 2, 29/10/2026):**
+
+- `docs/analisis/05_investigacion.md`: integra la comparación de plataformas de P3 con el
+  problema, los RF y las exclusiones. Incluye una aclaración sobre H3 (ver pedido a P3).
+- `docs/trazabilidad.md` verificada contra el contrato v1.1, `sql/` y `assets/`. Nuevas
+  columnas BD / Pantalla / Evidencia. **Todos los objetos de la base que nombra existen en
+  `sql/`.** Corregidos los nombres que venían del plan (`trg_validar_cita`,
+  `trg_historial_cita`, `ex_schedules_sin_cruce`, `trg_proteger_franja`).
+- `docs/pruebas/plan_pruebas.md`: 10 CP en "Aprobado en BD" (62/62 en Supabase); resumen de
+  ejecución; evidencias en `docs/pruebas/CP-XX.md`.
+- `docs/pruebas/plantilla_evidencia.md`: formato obligatorio para todos.
+- RNF-07: fuente WCAG 1.4.3 **verificada** (consultada el 29/10/2026). RNF-03 alineado con
+  los 4 pasos del wireframe.
+- `docs/documento_final.md`: borrador con las 18 secciones del entregable 1, que resumen y
+  enlazan los documentos de cada agente.
 
 **Pendiente:**
 
-- Integrar la comparación de 2 plataformas de P3.
-- Verificar la trazabilidad contra `sql/` y `assets/` cuando existan (columna "Verificado").
-- Consolidar resultados de pruebas y redactar el documento final de análisis y diseño.
-- Verificar la fuente WCAG citada en RNF-07 (marcada [POR VERIFICAR]).
+- Ronda 3: copiar resultados de las evidencias al plan de pruebas, marcar Pant./Evid. en la
+  trazabilidad, completar el documento final (capturas, limitaciones, bibliografía técnica,
+  integrantes) y `docs/sustentacion.md` en lo que toca a P1.
 
 **Bloqueos:**
 
-- Ninguno. La trazabilidad final depende del SQL de P2 y del código de P3 y P4.
+- Ninguno. Lo que falta depende de las pantallas de P3 y P4 y del PR #9 de P2 (CP-19, CP-23).
 
 **Pedidos para P1:**
 
@@ -203,9 +211,15 @@ contrato.
   `auth.js` (algo como `exigirRol('profesional')`), los estados de `ui/estados.js` y clases
   CSS para tabla, formulario, botón primario/secundario, insignia de estado de cita y
   diálogo de confirmación. Cuando estén, anota aquí su API y la uso tal cual.
-- (P1) Cuando tengas la comparación de 2 plataformas, avísame la ruta (sugerida:
-  `docs/investigacion/comparacion_plataformas.md`) con enlaces y fecha de consulta; la
-  integro en el documento final.
+- ✅ (P1) Comparación de plataformas: integrada desde `docs/investigacion_plataformas.md`.
+- (P1, 29/10) En `docs/investigacion_plataformas.md`, hallazgo **H3**: dice que las 2 h de
+  Zocdoc "coinciden con nuestra regla de cancelar hasta 2 h antes", pero tu propia tabla
+  (fila "Anticipación mínima para reservar", F5) indica que ese valor es para **reservar**.
+  Propuesta: "Zocdoc permite a la clínica fijar una anticipación mínima en horas (2 h por
+  defecto para reservar). Nuestra regla de cancelar hasta 2 h antes es una decisión propia
+  con la misma lógica de dar margen a la clínica". Ver `docs/analisis/05_investigacion.md`, 5.4.
+- (P1) Para tus evidencias usa `docs/pruebas/plantilla_evidencia.md`, un archivo
+  `docs/pruebas/CP-XX.md` por caso.
 - (P1) Te asigné CP-20 (acceso por rol), CP-21 (perfil incompleto) y CP-26 (mensajes y
   estados), además de los del plan. Ver `docs/pruebas/plan_pruebas.md`.
 
@@ -241,11 +255,17 @@ contrato.
 
 **Pedidos para P4:**
 
-- (P1) RF-21 / CU-12 (gestión de pacientes) necesita una pantalla de admin. En la
-  trazabilidad la llamé `admin/pacientes.html`: confírmame el nombre real.
+- ✅ (P1) Pantalla de pacientes: `admin/pacientes.html` (acordado en `docs/PENDIENTE.md`).
+  No tiene wireframe en `docs/wireframes/profesional_admin.md`; si lo agregas, avísame.
 - (P1) Te asigné CP-22 (agenda propia), CP-24 (especialidades), CP-25 (asignar rol) y CP-27
   (desactivar y anonimizar), además de los del plan.
-- (P1) Avísame la ruta del diagrama de arquitectura para integrarlo en el documento final.
+- ✅ (P1) Arquitectura integrada desde `docs/arquitectura/arquitectura.md`.
+- (P1, 29/10) En `docs/arquitectura/arquitectura.md`, sección 2, la fila "Funciones RPC" dice
+  `sql/esquema.sql`, pero las 13 RPC están en `sql/politicas_rls.sql` (en `esquema.sql`
+  están las tablas, restricciones y triggers). Además, la fila de GitHub Pages aún dice
+  `https://<usuario>.github.io/diseno/`: la URL real es `https://cospino08.github.io/diseno/`.
+- (P1) Para tus evidencias usa `docs/pruebas/plantilla_evidencia.md`, un archivo
+  `docs/pruebas/CP-XX.md` por caso.
 - *(de P3, 28/10)* En `assets/js/datos/cliente.js`, exporta el cliente con **nombre**:
   `export const supabase = createClient(...)`. `auth.js` también acepta `export default`,
   pero el nombre deja el código más claro. Mientras no exista, `auth.js` usa un cliente
