@@ -50,98 +50,82 @@ valida el rol por dentro. **P3 y P4: ya pueden probar contra la base real.**
 
 ## P2: Base de datos y seguridad
 
-**Hecho:**
+**Hecho (ronda 1):**
 
-- `docs/contrato_api.md` v1.0 publicado (rama `p2/contrato-api`). **P3 y P4: ya pueden
-  programar contra él.** Además de lo del plan, añade las RPC `rol_actual`, `mis_citas`,
-  `citas_admin`, `cambiar_activo_perfil` y `anonimizar_paciente`, y los códigos
-  `FRANJA_CON_CITA` y `DATOS_INVALIDOS`. Los errores llegan en `error.message` con el código
-  exacto (sección 4).
-- Rama `p2/sql` (PR aparte, incluye el contrato): `sql/esquema.sql`,
-  `sql/politicas_rls.sql`, `sql/datos_prueba.sql`, `sql/pruebas_seguridad.sql`,
-  `sql/reiniciar.sql`, `sql/README.md` (orden de ejecución) y `docs/modelo_datos/`
-  (diagrama ER en Mermaid, diccionario de datos, matriz rol-recurso-operación e
-  instrucciones de pruebas desde el navegador). Contrato actualizado a **v1.1** (sin cambios
-  de nombres ni firmas).
-- **Probado en PostgreSQL 15.19 local (Docker)**, no en Supabase. `sql/local/` simula lo
-  mínimo de Supabase (roles `anon`/`authenticated`, `auth.users`, `auth.uid()`, permisos por
-  defecto). Resultado: los scripts corren en orden sobre una base vacía sin errores;
-  `pruebas_seguridad.sql` da **62/62 PASA**; el ciclo `reiniciar → esquema → políticas →
-  datos` también funciona; CP-02 se probó además con **dos sesiones simultáneas** reales
-  (la segunda espera el bloqueo y recibe `FRANJA_OCUPADA`).
+- Contrato `docs/contrato_api.md` y SQL completo (`sql/`), fusionados en `main` (PR #3 y
+  #8). El coordinador ejecutó los scripts en Supabase: **62/62 PASA**.
+
+**Hecho (ronda 2, 29/10/2026, rama `p2/ronda2`):**
+
+- Atendidos todos los pedidos de abajo (respuesta en cada uno).
+- `sql/pruebas_seguridad.sql`: añadidos **CP-19** (rol falso en el registro, incluye CP-21 a
+  nivel de base) y **CP-23** (historial automático y escritura directa). Ahora son **72
+  comprobaciones**: 72/72 PASA en local, dos ejecuciones seguidas sin dejar cambios.
+- Nuevo `sql/datos_pruebas_especiales.sql` (paso 3b, opcional): paciente con nombre
+  `<img src=x onerror=alert(1)>` y una cita con la Dra. Gómez (CP-18), y un día de carga con
+  500 citas de la Dra. Gómez a hoy + 90 días (CP-17). Se puede ejecutar sobre la base ya
+  cargada; si se repite, no duplica nada. `mi_agenda` de ese día tarda **7 ms** en la base.
+- **Verificado a través de la API:** PostgREST v12.2.3 (la versión de Supabase) en local con
+  JWT de cada usuario. Los embebidos de `assets/js/datos/citas.js` funcionan tal cual, los
+  errores llegan como `{ code: 'P0001', message: 'CODIGO', details }` y `anon` recibe HTTP 401
+  con `42501`.
+- Contrato **v1.2**: nombres de las FK para embeber y códigos HTTP reales. Sin cambios de
+  nombres ni firmas.
+- Revisé `docs/requisitos/`, `docs/trazabilidad.md` y `docs/pruebas/plan_pruebas.md` contra
+  el contrato: las RPC, los códigos y las reglas (2 h, 31 días, 10-240 min, perfil completo)
+  coinciden. No encontré diferencias.
 
 **Pendiente:**
 
-- Que el humano ejecute los scripts en Supabase (ver abajo) y confirme que
-  `pruebas_seguridad.sql` da todo PASA allí.
+- Que el coordinador ejecute en Supabase `datos_pruebas_especiales.sql` y la nueva
+  versión de `pruebas_seguridad.sql` (pedido abajo, en la sección del coordinador).
 - Pruebas desde el navegador (`docs/modelo_datos/pruebas_seguridad.md`, sección 2) cuando
-  haya páginas publicadas.
-- Atender pedidos de P3 y P4 sobre el contrato.
-
-**Pasos para el humano (ronda 2):**
-
-1. En Supabase: Authentication → Users → Add user (marcar "Auto Confirm User") para
-   `admin@demo.test`, `profesional1@demo.test`, `profesional2@demo.test`,
-   `paciente1@demo.test` y `paciente2@demo.test`. Elegir contraseñas y **no** subirlas al repo.
-2. SQL Editor: ejecutar en orden `sql/esquema.sql`, `sql/politicas_rls.sql`,
-   `sql/datos_prueba.sql` (este nombra a `admin@demo.test` como primer admin).
-3. Ejecutar `sql/pruebas_seguridad.sql` y guardar captura de la tabla de resultados.
-
-**Riesgos no verificados localmente (solo se pueden comprobar en Supabase):**
-
-- `datos_prueba.sql` inserta 22 usuarios ficticios sin contraseña directamente en
-  `auth.users` (con los campos `*_token` en `''`). Si la pantalla Authentication → Users da
-  error tras ejecutarlo, avisar a P2.
-- El SQL Editor muestra solo el último resultado; los scripts están hechos para que ese
-  último resultado sea el resumen o la tabla de pruebas.
+  las páginas estén publicadas.
 
 **Bloqueos:**
 
-- Ninguno. No tengo acceso a Supabase: la ejecución real depende del humano.
+- Ninguno.
 
-**Pedidos para P2:**
+**Pedidos para P2** (todos atendidos el 29/10/2026):
 
-- _(de P4)_ En `docs/contrato_api.md`, por favor indica para cada RPC: parámetros con tipo,
-  forma exacta de lo que devuelve (sobre todo `mi_agenda` e `indicadores_citas`: nombres de
-  columnas o JSON) y los códigos de error. Hoy `assets/js/datos/` sigue la sección 7 del plan.
-- _(de P4)_ Que los errores de las RPC empiecen por el código en MAYÚSCULAS
-  (`raise exception 'CODIGO'` o `'CODIGO: detalle'`): `datos/respuesta.js` extrae así el código.
-- _(de P4)_ Que `generar_franjas` traduzca `exclusion_violation` a `HORARIO_SUPERPUESTO`, y que
-  el trigger de `schedules` (P12) use un código propio, por ejemplo `FRANJA_CON_CITA`.
-- _(de P4)_ Que `appointments` tenga **una sola** relación hacia `schedules` y una hacia
-  `professionals` para que PostgREST pueda embeber sin ambigüedad
-  (`schedules(...)`, `professionals(...)`). Si la FK compuesta de C7 convive con una FK simple,
-  dime el nombre de la restricción y lo pongo en `datos/citas.js`.
-- _(de P4)_ Confirmar que `professionals` tiene `nombre_publico` y `registro_profesional`, y
-  que el admin puede leer `profiles` (para buscar a quién promover) y `status_history`.
-- _(de P4)_ Que `indicadores_citas` devuelva conteos **por estado, por especialidad y por
-  periodo** (por día o por mes), como pide la sección 5.2 del enunciado.
-- (P1) Revisa que los RF y CU de `docs/requisitos/` coincidan con el contrato v1.0. Se
-  añadió RF-21 (gestión de pacientes) por `cambiar_activo_perfil` y `anonimizar_paciente`.
-- (P1) En `sql/datos_prueba.sql`, usa las cuentas del plan de pruebas (8.1):
-  `paciente1`, `paciente2`, `profesional1`, `profesional2`, `admin` y `nuevo1@demo.test`
-  (este último sin perfil completo, para CP-19, CP-21 y CP-25). Para CP-17, un script o
-  bloque que genere 500 citas de un día para `profesional1`. Para CP-18, un paciente con el
-  nombre `<img src=x onerror=alert(1)>`.
-- (P1) Te asigné CP-19 (rol falso en el registro) y CP-23 (historial e insert directo), además
-  de los del plan. Inclúyelos en `sql/pruebas_seguridad.sql` si aplica.
-- *(de P3, 28/10)* Para las vistas del paciente necesito que `docs/contrato_api.md` defina:
-  1. **Columnas exactas que devuelve `franjas_disponibles`**. Propuesta: `schedule_id`,
-     `fecha`, `hora_inicio`, `hora_fin`, `professional_id`, `profesional` (nombre público),
-     `specialty_id`, `especialidad`. Además, que `p_profesional` y `p_fecha` acepten `null`
-     (cualquier profesional).
-  2. **Cómo lee el paciente "Mis citas"** con el nombre del profesional y la especialidad
-     (¿vista `v_mis_citas` o `select` con relaciones embebidas?). Necesito `id`, `fecha`,
-     `hora_inicio`, `hora_fin`, `profesional`, `especialidad`, `estado`, `motivo`, `cancelled_at`
-     y, si es posible, quién canceló, para mostrar "Cancelada por la institución" (plan, P12).
-  3. **Cómo se listan los profesionales para el filtro** (¿`v_profesionales_publicos`?).
-  4. **Columnas de `profiles`** (uso `id, nombres, documento, telefono, fecha_nacimiento,
-     rol, activo`) y si `documento` es `UNIQUE`.
-  5. Que las RPC lancen el código **al inicio** del mensaje (`raise exception
-     'FRANJA_OCUPADA'` o `'TRANSICION_INVALIDA: …'`). `assets/js/ui/mensajes.js` lo
-     detecta así.
-  6. **Código de error del trigger de P12** (mover o desactivar una franja con cita activa).
-     Propongo `FRANJA_CON_CITA`; ya está en `mensajes.js`.
+- ✅ _(de P4)_ Parámetros, forma de lo que devuelve cada RPC y códigos de error →
+  `docs/contrato_api.md` §3: tabla de parámetros con tipo y default, y columnas de salida
+  de cada RPC. `mi_agenda` devuelve filas (§3.8) e `indicadores_citas` un JSON (§3.14).
+  `assets/js/datos/` ya coincide con las firmas.
+- ✅ _(de P4)_ Errores con el código al inicio → `error.message` es **exactamente** el
+  código (`'FRANJA_OCUPADA'`, sin texto adicional); el detalle va en `error.details`.
+  `PATRON_CODIGO_CONTRATO` de `respuesta.js` funciona; comprobado con PostgREST.
+- ✅ _(de P4)_ `generar_franjas` traduce `exclusion_violation` a `HORARIO_SUPERPUESTO`, y el
+  trigger de `schedules` usa `FRANJA_CON_CITA`. Un insert/update directo en `schedules` que
+  se cruza también da `HORARIO_SUPERPUESTO` (lo adelanta el trigger).
+- ✅ _(de P4)_ Una sola relación por tabla: `appointments` tiene una FK hacia `schedules`
+  (`fk_appointments_schedule`, compuesta) y una hacia `professionals`
+  (`appointments_professional_id_fkey`). `schedules(...)` y `professionals(...)` se embeben
+  sin indicar la restricción; verificado con PostgREST v12 (contrato §2.5).
+- ✅ _(de P4)_ `professionals` tiene `nombre_publico` y `registro_profesional`; el admin lee
+  todos los `profiles` y todo `status_history` (contrato §2.1, §2.6; matriz de permisos).
+- ✅ _(de P4)_ `indicadores_citas(p_desde, p_hasta, p_agrupacion)` devuelve `total`,
+  `por_estado`, `por_especialidad` y `por_periodo`; `p_agrupacion` = `'dia'`, `'semana'` o
+  `'mes'` (default `'mes'`).
+- ✅ (P1) RF y CU contra el contrato: coinciden (ver "Hecho").
+- ✅ (P1) Cuentas del plan de pruebas: las 5 cuentas demo ya existen. **`nuevo1@demo.test`
+  no va en los scripts a propósito:** CP-19, CP-21 y CP-25 consisten justamente en
+  registrar una cuenta nueva, así que se crea en la prueba, desde `registro.html`. Cualquier
+  cuenta nueva queda con perfil incompleto. CP-17 y CP-18 → `sql/datos_pruebas_especiales.sql`
+  (el día de carga tiene 500 citas en un solo día, como pide RNF-02).
+- ✅ (P1) CP-19 y CP-23 incluidos en `sql/pruebas_seguridad.sql`.
+- ✅ _(de P3)_ 1. `franjas_disponibles`: columnas exactamente las propuestas
+  (`schedule_id, fecha, hora_inicio, hora_fin, professional_id, profesional, specialty_id,
+  especialidad`); los tres parámetros aceptan `null`; `p_fecha = null` = próximos 30 días
+  (§3.3). 2. "Mis citas": RPC `mis_citas()` con `cita_id, fecha, hora_inicio, hora_fin,
+  estado, motivo, observaciones, profesional, especialidad, cancelado_por, created_at,
+  cancelled_at, puede_cancelar` (§3.5). Si `cancelado_por` no es `'paciente'` →
+  "Cancelada por la institución". 3. Filtro de profesionales: tabla `professionals`
+  directamente (el paciente solo ve los activos), con `specialties(nombre)` embebido. No hay
+  vistas `v_*`. 4. `profiles`: `id, email, nombres, documento, telefono, fecha_nacimiento,
+  rol, activo, created_at`; `documento` es UNIQUE (`uq_profiles_documento`, error `23505`).
+  5. Código al inicio: sí, `error.message` es el código exacto. 6. Trigger de P12:
+  `FRANJA_CON_CITA`.
 
 ---
 
@@ -242,6 +226,15 @@ contrato.
 
 **Pedidos para P4:**
 
+- *(de P2, 29/10)* Sugerencias para `assets/js/datos/` (lo demás ya coincide con el contrato
+  v1.2): (1) `listarMisCitas()` embebe `professionals`; para el paciente, la RLS oculta los
+  profesionales inactivos y en citas antiguas `profesional` llegaría `null`. Mejor usar
+  `supabase.rpc('mis_citas')`, que además ordena y trae `puede_cancelar` y `cancelado_por`.
+  (2) `cambiarEstadoCita()` puede pasar `p_observaciones` (opcional). (3) Para el admin,
+  `citas_admin(p_desde, p_hasta, p_profesional, p_estado)` trae los nombres del paciente
+  y del profesional ya aplanados. (4) CP-17: con `sql/datos_pruebas_especiales.sql`, la
+  agenda de profesional1 a hoy + 90 días tiene 500 citas.
+
 - (P1) RF-21 / CU-12 (gestión de pacientes) necesita una pantalla de admin. En la
   trazabilidad la llamé `admin/pacientes.html`: confírmame el nombre real.
 - (P1) Te asigné CP-22 (agenda propia), CP-24 (especialidades), CP-25 (asignar rol) y CP-27
@@ -262,6 +255,12 @@ contrato.
 ---
 
 ## Pedidos para el coordinador (humano)
+
+- *(de P2, 29/10)* En el SQL Editor de Supabase: (1) ejecutar `sql/datos_pruebas_especiales.sql`
+  (no toca lo ya cargado) y anotar la fecha del "día de carga CP-17" que muestra al final;
+  (2) ejecutar la nueva versión de `sql/pruebas_seguridad.sql` y confirmar **72/72 PASA**
+  (guardar captura en `docs/pruebas/evidencias/`). Desde que existe ese paciente, la pantalla
+  Authentication → Users debería seguir abriendo bien; si no, avisarme.
 
 - *(de P3)* En Supabase, en **Authentication → URL Configuration**, agrega a *Redirect
   URLs* la URL de GitHub Pages (`https://cospino08.github.io/diseno/**`) y
