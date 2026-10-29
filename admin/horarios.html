@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Horarios · Administración · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- D-04 Horarios (docs/wireframes/profesional_admin.md). Responsable: P4.
+       El encabezado y el menú se repiten igual en las 7 páginas de admin/. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="resumen.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Administración">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="resumen.html">Resumen</a></li>
+          <li><a class="menu__enlace" href="especialidades.html">Especialidades</a></li>
+          <li><a class="menu__enlace" href="profesionales.html">Profesionales</a></li>
+          <li><a class="menu__enlace" href="horarios.html">Horarios</a></li>
+          <li><a class="menu__enlace" href="citas.html">Citas</a></li>
+          <li><a class="menu__enlace" href="pacientes.html">Pacientes</a></li>
+          <li><a class="menu__enlace" href="indicadores.html">Indicadores</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Horarios</h1>
+
+    <section aria-labelledby="titulo-generar">
+      <h2 id="titulo-generar">Generar franjas</h2>
+      <p class="texto-suave">
+        Crea franjas seguidas de la duración elegida. Si una sola se cruza con otra franja activa
+        del profesional, no se crea ninguna.
+      </p>
+      <div id="resultado-generar"></div>
+      <form id="form-generar" class="formulario formulario--doble" novalidate>
+        <div class="campo">
+          <label for="profesional">Profesional <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <select class="control" id="profesional" name="profesional" required aria-describedby="profesional-error"></select>
+          <p id="profesional-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="fecha">Fecha <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="fecha" name="fecha" type="date" required aria-describedby="fecha-error">
+          <p id="fecha-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="inicio">Desde <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="inicio" name="inicio" type="time" value="08:00" required aria-describedby="inicio-error">
+          <p id="inicio-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="fin">Hasta <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="fin" name="fin" type="time" value="12:00" required aria-describedby="fin-error">
+          <p id="fin-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="minutos">Duración de cada franja</label>
+          <select class="control" id="minutos" name="minutos">
+            <option value="15">15 minutos</option>
+            <option value="20">20 minutos</option>
+            <option value="30" selected>30 minutos</option>
+            <option value="40">40 minutos</option>
+            <option value="60">60 minutos</option>
+          </select>
+        </div>
+        <div class="acciones">
+          <button class="boton boton--primario" type="submit">Generar franjas</button>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="titulo-franjas">
+      <h2 id="titulo-franjas">Franjas del día</h2>
+      <p class="texto-suave">
+        Una franja con cita programada o confirmada no se puede mover ni desactivar: primero hay
+        que cancelar la cita.
+      </p>
+      <div id="zona-franjas"></div>
+    </section>
+
+    <dialog class="dialogo" id="dialogo-franja" aria-labelledby="titulo-dialogo-franja">
+      <h2 id="titulo-dialogo-franja">Cambiar hora de la franja</h2>
+      <form id="form-franja" class="formulario" novalidate>
+        <div id="resultado-franja"></div>
+        <div class="campo">
+          <label for="franja-fecha">Fecha <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="franja-fecha" name="fecha" type="date" required aria-describedby="franja-fecha-error">
+          <p id="franja-fecha-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="franja-inicio">Hora de inicio <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="franja-inicio" name="inicio" type="time" required aria-describedby="franja-inicio-error">
+          <p id="franja-inicio-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="franja-fin">Hora de fin <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="franja-fin" name="fin" type="time" required aria-describedby="franja-fin-error">
+          <p id="franja-fin-error" class="campo__error" hidden></p>
+        </div>
+        <div class="acciones">
+          <button class="boton boton--primario" type="submit">Guardar</button>
+          <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="horarios.js"></script>
+</body>
+</html>

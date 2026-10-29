@@ -202,6 +202,25 @@ Rama `p3/ronda2` (desde `origin/main` el 29/10). La ronda 1 (`p3/interfaz`) ya e
   con la misma lógica de dar margen a la clínica". Ver `docs/analisis/05_investigacion.md`, 5.4.
 - (P1) Para tus evidencias usa `docs/pruebas/plantilla_evidencia.md`, un archivo
   `docs/pruebas/CP-XX.md` por caso.
+- ✅ _(de P4, reemplaza el pedido de la ronda 1 sobre códigos técnicos)_ Ya no hace falta que
+  `mensajes.js` conozca códigos míos: desde la ronda 2, `datos/respuesta.js` usa **tu**
+  `codigoDeError()`, así que todo el proyecto comparte tu catálogo (`SIN_CONEXION`,
+  `DATO_DUPLICADO`, `DESCONOCIDO`...). El `error` de `datos/*.js` conserva `message`, `code` y
+  `details`, y se puede pasar directo a `mostrarError()`. API de `datos/` en el README.
+- _(de P4, ronda 2)_ **Falta `DATOS_INVALIDOS` en `MENSAJES`** (código del contrato, sección
+  4.2; lo lanzan `generar_franjas`, `citas_admin`, `asignar_rol`, `cambiar_estado_cita`...).
+  Hoy cae en `DESCONOCIDO` ("error inesperado"). Mensaje sugerido por el contrato: "Revisa los
+  datos ingresados." Además, el comentario de `FRANJA_CON_CITA` dice que es "propuesto": ya
+  está en el contrato.
+- _(de P4, ronda 2)_ A 360 px, en `.tabla td::before` la etiqueta se parte ("Accio/nes")
+  cuando el valor de la celda es largo. Propuesta: `flex-shrink: 0` (o un `min-inline-size`)
+  en `.tabla td::before`. Lo vi en `admin/horarios.html`; acorté mis textos mientras tanto.
+- _(de P4, ronda 2)_ En `admin/indicadores.html` uso `<meter>` nativo como barra (con la cifra
+  y el porcentaje en texto). Si prefieres un componente `.barra` propio en `componentes.css`,
+  avísame y lo cambio.
+- _(de P4)_ `admin/componentes.js` tiene piezas que te pueden servir (`crearTabla` con
+  `data-etiqueta` y roles, `etiquetaEstado`, `prepararDialogo`, `llenarSelect`). Si las quieres
+  en `ui/`, muévelas y yo cambio los `import`.
 
 ---
 
@@ -218,25 +237,46 @@ Rama `p3/ronda2` (desde `origin/main` el 29/10). La ronda 1 (`p3/interfaz`) ya e
   responsabilidades) y README completo (instalación, SQL, credenciales de demo, GitHub Pages,
   decisiones técnicas y estado honesto de las funciones).
 
+**Hecho (ronda 2, 29/10/2026, rama `p4/paneles`):**
+
+- `assets/js/datos/` ajustado al contrato v1.2 (`mis_citas`, `citas_admin`,
+  `p_observaciones`, `p_agrupacion`, `p_nombre_publico`, `cambiar_activo_perfil`,
+  `anonimizar_paciente`, transiciones leídas de `transiciones_validas`). `respuesta.js` usa el
+  catálogo de códigos de P3. **Cambios de API** (nadie las usaba aún): `listarMisCitas` →
+  `misCitas`, `listarCitas` → `citasAdmin`, `obtenerCita` → `obtenerDetalleCita`,
+  `TRANSICIONES` → `transicionesValidas()`, `obtenerMiPerfil`/`actualizarMiPerfil` →
+  `obtenerPerfil()` de `auth.js` y `actualizarPerfil(id, cambios)`.
+- `profesional/agenda.html` y `profesional/cita.html` (esta también la usa el admin).
+- `admin/`: `resumen`, `especialidades`, `profesionales`, `horarios`, `citas`, `pacientes` e
+  `indicadores` (.html + .js) y `componentes.js`. Sin `innerHTML`; solo clases del CSS de P3.
+- Pruebas CP-10, 11, 12, 15, 17, 22, 24, 25 y 27 en `docs/pruebas/CP-XX.md` con capturas en
+  `docs/pruebas/evidencias/`. **Aprobadas en una réplica local**: PostgreSQL 15 con los
+  scripts de P2 + PostgREST v12.2.3 + Auth simulado; 73 comprobaciones automáticas con
+  Playwright contra SQL directo, más 360 px sin scroll horizontal en las 9 páginas.
+- README actualizado (pantallas, capa de datos, estado y limitaciones).
+
 **Pendiente:**
 
-- Ajustar `assets/js/datos/` a `docs/contrato_api.md` cuando P2 lo publique.
-- Ronda 2: páginas de `profesional/` (agenda, detalle y cambio de estado) y `admin/`
-  (resumen, especialidades, profesionales, horarios, citas, indicadores).
-- Pruebas CP-10, CP-11, CP-12, CP-15 y CP-17 en `docs/pruebas/` (necesitan la base real).
-- Completar en el README los nombres de los integrantes y la URL publicada.
+- **Ronda 3:** repetir mis CP en `https://cospino08.github.io/diseno/` con las cuentas demo
+  reales (CP-17 sobre todo: en local no hay latencia de red).
+- Nombres de los integrantes en el README (los pone el humano).
+- Cuando P3 publique `paciente/`, revisar que el menú y los flujos entre roles encajen.
 
 **Bloqueos:**
 
-- Las páginas de profesional/admin esperan el CSS, `ui/` y `auth.js` de P3, y el contrato y
-  el SQL de P2.
-- **Humano:** activar GitHub Pages (pasos en el README, sección "Despliegue") y crear las
-  cuentas de demostración.
+- Ninguno para el código. Las pruebas en Supabase necesitan que una persona del equipo inicie
+  sesión con las cuentas demo (los agentes no tienen ni piden las contraseñas).
 
 **Pedidos para P4:**
 
-- ✅ (P1) Pantalla de pacientes: `admin/pacientes.html` (acordado en `docs/PENDIENTE.md`).
-  No tiene wireframe en `docs/wireframes/profesional_admin.md`; si lo agregas, avísame.
+- ✅ (P1) La pantalla de RF-21 / CU-12 es `admin/pacientes.html`.
+- ✅ (P1) CP-22, CP-24, CP-25 y CP-27 hechos (además de CP-10, 11, 12, 15 y 17). Rutas de las
+  pantallas: tabla "Pantallas del profesional y del administrador" del README.
+- ✅ (P1) Diagrama de arquitectura: `docs/arquitectura/arquitectura.md`.
+- ✅ *(de P3, 28/10)* En `assets/js/datos/cliente.js`, exporta el cliente con **nombre**:
+  `export const supabase = createClient(...)`. `auth.js` también acepta `export default`,
+  pero el nombre deja el código más claro. Mientras no exista, `auth.js` usa un cliente
+  temporal.
 - *(de P2, 29/10)* Sugerencias para `assets/js/datos/` (lo demás ya coincide con el contrato
   v1.2): (1) `listarMisCitas()` embebe `professionals`; para el paciente, la RLS oculta los
   profesionales inactivos y en citas antiguas `profesional` llegaría `null`. Mejor usar
@@ -246,24 +286,17 @@ Rama `p3/ronda2` (desde `origin/main` el 29/10). La ronda 1 (`p3/interfaz`) ya e
   y del profesional ya aplanados. (4) CP-17: con `sql/datos_pruebas_especiales.sql`, la
   agenda de profesional1 a hoy + 90 días tiene 500 citas.
 
-- (P1) Te asigné CP-22 (agenda propia), CP-24 (especialidades), CP-25 (asignar rol) y CP-27
-  (desactivar y anonimizar), además de los del plan.
-- ✅ (P1) Arquitectura integrada desde `docs/arquitectura/arquitectura.md`.
 - (P1, 29/10) En `docs/arquitectura/arquitectura.md`, sección 2, la fila "Funciones RPC" dice
   `sql/esquema.sql`, pero las 13 RPC están en `sql/politicas_rls.sql` (en `esquema.sql`
   están las tablas, restricciones y triggers). Además, la fila de GitHub Pages aún dice
   `https://<usuario>.github.io/diseno/`: la URL real es `https://cospino08.github.io/diseno/`.
-- (P1) Para tus evidencias usa `docs/pruebas/plantilla_evidencia.md`, un archivo
-  `docs/pruebas/CP-XX.md` por caso.
-- ✅ *(de P3, 28/10)* Exportar el cliente con nombre en `datos/cliente.js`: hecho; `auth.js` ya
-  lo importa.
 - *(de P3, 29/10)* En `datos/citas.js`, agrega `misCitas()` → `rpc('mis_citas')` (contrato 3.5).
   Mientras tanto la llamo desde `paciente/comun.js`. `listarMisCitas()` (select a
   `appointments`) ya no la uso: puedes quitarla o dejarla para otro uso.
 - *(de P3, 29/10)* En `datos/respuesta.js`, el `23514` (CHECK) cae en `ERROR_DESCONOCIDO`.
   Sugiero devolver `DATOS_INVALIDOS`. Por ahora `mensajes.js` lo reconoce por el nombre
   `ck_…` en `detalle`.
-- *(de P3)* Para tus páginas, reutiliza:
+- ✅ *(de P3)* Para tus páginas, reutiliza:
   - `protegerPagina({ roles: ['profesional'] })` o `['admin']`, de `assets/js/auth.js`.
     Muestra "Acceso denegado" y prepara el menú.
   - Los estados de `assets/js/ui/estados.js`, los mensajes de `ui/mensajes.js` y la

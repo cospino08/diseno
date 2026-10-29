@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Citas · Administración · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- D-05 Citas (docs/wireframes/profesional_admin.md). Responsable: P4.
+       El encabezado y el menú se repiten igual en las 7 páginas de admin/. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="resumen.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Administración">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="resumen.html">Resumen</a></li>
+          <li><a class="menu__enlace" href="especialidades.html">Especialidades</a></li>
+          <li><a class="menu__enlace" href="profesionales.html">Profesionales</a></li>
+          <li><a class="menu__enlace" href="horarios.html">Horarios</a></li>
+          <li><a class="menu__enlace" href="citas.html">Citas</a></li>
+          <li><a class="menu__enlace" href="pacientes.html">Pacientes</a></li>
+          <li><a class="menu__enlace" href="indicadores.html">Indicadores</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Citas</h1>
+
+    <form id="form-filtros" class="formulario formulario--doble" novalidate>
+      <div class="campo">
+        <label for="desde">Desde <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="desde" name="desde" type="date" required aria-describedby="desde-error">
+        <p id="desde-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="hasta">Hasta <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="hasta" name="hasta" type="date" required aria-describedby="hasta-ayuda hasta-error">
+        <p id="hasta-ayuda" class="campo__ayuda">Máximo un año entre las dos fechas.</p>
+        <p id="hasta-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="profesional">Profesional</label>
+        <select class="control" id="profesional" name="profesional">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="especialidad">Especialidad</label>
+        <select class="control" id="especialidad" name="especialidad">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="estado">Estado</label>
+        <select class="control" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="programada">Programada</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="atendida">Atendida</option>
+          <option value="cancelada">Cancelada</option>
+          <option value="no_asistio">No asistió</option>
+        </select>
+      </div>
+      <div class="acciones">
+        <button class="boton boton--primario" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    <p id="resumen-citas" class="texto-suave" role="status"></p>
+    <div id="zona-citas"></div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="citas.js"></script>
+</body>
+</html>

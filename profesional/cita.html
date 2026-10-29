@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle de la cita · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- R-02 Detalle de cita y cambio de estado (docs/wireframes/profesional_admin.md).
+       La usan el profesional asignado y el admin. Responsable: P4. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="agenda.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <!-- El script deja solo los enlaces del rol de la sesión. -->
+          <li data-rol="profesional"><a class="menu__enlace" href="agenda.html">Mi agenda</a></li>
+          <li data-rol="admin"><a class="menu__enlace" href="../admin/resumen.html">Resumen</a></li>
+          <li data-rol="admin"><a class="menu__enlace" href="../admin/citas.html">Citas</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor contenedor--estrecho" tabindex="-1">
+    <p><a id="enlace-volver" href="agenda.html">◂ Volver</a></p>
+    <h1 id="titulo-cita">Detalle de la cita</h1>
+    <div id="zona-cita"></div>
+
+    <div id="contenido-cita" hidden>
+      <dl class="resumen tarjeta" id="datos-cita"></dl>
+
+      <section aria-labelledby="titulo-cambio">
+        <h2 id="titulo-cambio">Cambiar estado</h2>
+        <div id="resultado-cambio"></div>
+        <form id="form-estado" class="formulario" novalidate>
+          <div class="campo">
+            <label for="observaciones">Observaciones administrativas (opcional)</label>
+            <textarea class="control" id="observaciones" name="observaciones" maxlength="500"
+                      aria-describedby="observaciones-ayuda observaciones-contador observaciones-error"></textarea>
+            <p id="observaciones-ayuda" class="campo__ayuda">
+              Las ve también el paciente. No escribas diagnósticos ni información clínica.
+            </p>
+            <p id="observaciones-contador" class="campo__ayuda" aria-live="polite"></p>
+            <p id="observaciones-error" class="campo__error" hidden></p>
+          </div>
+          <p id="texto-transiciones" class="texto-suave"></p>
+          <div class="acciones" id="botones-estado"></div>
+          <div class="acciones">
+            <button class="boton boton--secundario" type="submit">Guardar solo las observaciones</button>
+          </div>
+        </form>
+      </section>
+
+      <section aria-labelledby="titulo-historial">
+        <h2 id="titulo-historial">Historial de estados</h2>
+        <div id="zona-historial"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="cita.js"></script>
+</body>
+</html>

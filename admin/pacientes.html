@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pacientes · Administración · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- CU-12 Pacientes (docs/wireframes/profesional_admin.md). Responsable: P4.
+       El encabezado y el menú se repiten igual en las 7 páginas de admin/. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="resumen.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Administración">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="resumen.html">Resumen</a></li>
+          <li><a class="menu__enlace" href="especialidades.html">Especialidades</a></li>
+          <li><a class="menu__enlace" href="profesionales.html">Profesionales</a></li>
+          <li><a class="menu__enlace" href="horarios.html">Horarios</a></li>
+          <li><a class="menu__enlace" href="citas.html">Citas</a></li>
+          <li><a class="menu__enlace" href="pacientes.html">Pacientes</a></li>
+          <li><a class="menu__enlace" href="indicadores.html">Indicadores</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Pacientes</h1>
+    <p class="texto-suave">
+      Una cuenta desactivada no puede reservar ni consultar citas. Anonimizar atiende una solicitud
+      de baja: borra los datos personales y cancela las citas futuras, pero conserva el historial.
+    </p>
+
+    <form id="form-buscar" class="formulario formulario--doble" novalidate>
+      <div class="campo">
+        <label for="busqueda">Nombre, documento o correo</label>
+        <input class="control" id="busqueda" name="busqueda" type="search" maxlength="80">
+      </div>
+      <div class="acciones">
+        <button class="boton boton--primario" type="submit">Buscar</button>
+      </div>
+    </form>
+
+    <p id="resumen-pacientes" class="texto-suave" role="status"></p>
+    <div id="zona-pacientes"></div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="pacientes.js"></script>
+</body>
+</html>
