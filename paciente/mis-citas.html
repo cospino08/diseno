@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis citas · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="index.html">Inicio</a></li>
+          <li><a class="menu__enlace" href="buscar.html">Reservar cita</a></li>
+          <li><a class="menu__enlace" href="mis-citas.html">Mis citas</a></li>
+          <li><a class="menu__enlace" href="perfil.html">Mi perfil</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- P-04 -->
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Mis citas</h1>
+
+    <!-- Pestañas con el patrón de WAI-ARIA: Tab entra a la pestaña activa y las
+         flechas izquierda/derecha (o Inicio/Fin) cambian de pestaña. -->
+    <div class="pestanas" role="tablist" aria-label="Mis citas">
+      <button class="pestana" role="tab" type="button" id="pestana-proximas"
+              aria-selected="true" aria-controls="panel-proximas">Próximas</button>
+      <button class="pestana" role="tab" type="button" id="pestana-historial"
+              aria-selected="false" aria-controls="panel-historial" tabindex="-1">Historial</button>
+    </div>
+    <div role="tabpanel" id="panel-proximas" aria-labelledby="pestana-proximas" tabindex="-1"></div>
+    <div role="tabpanel" id="panel-historial" aria-labelledby="pestana-historial" tabindex="-1" hidden></div>
+
+    <div class="acciones">
+      <a class="boton boton--primario" href="buscar.html">Reservar otra cita</a>
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { protegerPagina, manejarSesionExpirada } from '../assets/js/auth.js';
+    import { cancelarCita } from '../assets/js/datos/citas.js';
+    import { mensajeDeError } from '../assets/js/ui/mensajes.js';
+    import { mostrarCargando, mostrarVacio, mostrarError, limpiar, avisar } from '../assets/js/ui/estados.js';
+    import { confirmar } from '../assets/js/ui/dialogo.js';
+    import { formatearFecha, formatearHora } from '../assets/js/ui/formato.js';
+    import { misCitas, separarCitas, crearTarjetaCita } from './comun.js';
+
+    const pestanas = [...document.querySelectorAll('[role="tab"]')];
+    const panelProximas = document.getElementById('panel-proximas');
+    const panelHistorial = document.getElementById('panel-historial');
+
+    activarPestanas();
+    const acceso = await protegerPagina({ roles: ['paciente'] });
+    if (acceso) await cargar();
+
+    async function cargar() {
+      mostrarCargando(panelProximas, 'Cargando tus citas…');
+      mostrarCargando(panelHistorial, 'Cargando tus citas…');
+
+      const { data, error } = await misCitas();
+      if (error) {
+        if (manejarSesionExpirada(error)) return;
+        mostrarError(panelProximas, 'No pudimos cargar tus citas.', { reintentar: cargar });
+        mostrarError(panelHistorial, 'No pudimos cargar tus citas.', { reintentar: cargar });
+        return;
+      }
+
+      const { proximas, historial } = separarCitas(data);
+      pintar(panelProximas, proximas, 'No tienes citas próximas.');
+      pintar(panelHistorial, historial, 'Aún no tienes citas pasadas o canceladas.');
+    }
+
+    function pintar(panel, citas, textoVacio) {
+      if (citas.length === 0) {
+        return mostrarVacio(panel, textoVacio, { texto: 'Reservar cita', href: 'buscar.html' });
+      }
+      const lista = document.createElement('ul');
+      lista.className = 'lista-tarjetas';
+      for (const cita of citas) {
+        const tarjeta = crearTarjetaCita(cita);
+        agregarCancelacion(tarjeta, cita);
+        const item = document.createElement('li');
+        item.append(tarjeta);
+        lista.append(item);
+      }
+      limpiar(panel);
+      panel.append(lista);
+    }
+
+    /**
+     * Botón "Cancelar cita" solo si la base dice puede_cancelar (programada o
+     * confirmada y faltan más de 2 h). Ocultarlo es usabilidad, NO seguridad:
+     * si alguien llama cancelar_cita igual, la base responde FUERA_DE_PLAZO.
+     */
+    function agregarCancelacion(tarjeta, cita) {
+      if (cita.puede_cancelar) {
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'boton boton--peligro';
+        boton.textContent = 'Cancelar cita';
+        const cuando = `${formatearFecha(cita.fecha)} · ${formatearHora(cita.hora_inicio)}`;
+        boton.setAttribute('aria-label', `Cancelar la cita del ${cuando} con ${cita.profesional}`);
+        boton.addEventListener('click', () => cancelar(cita, cuando));
+        tarjeta.append(boton);
+      } else if (cita.estado === 'programada' || cita.estado === 'confirmada') {
+        const nota = document.createElement('p');
+        nota.className = 'texto-suave';
+        nota.textContent = 'Ya no se puede cancelar en línea (faltan menos de 2 horas). Comunícate con la clínica.';
+        tarjeta.append(nota);
+      }
+    }
+
+    async function cancelar(cita, cuando) {
+      const aceptado = await confirmar({
+        titulo: '¿Cancelar esta cita?',
+        detalles: [cuando, cita.profesional],
+        mensaje: 'La hora quedará libre para otra persona.',
+        textoAceptar: 'Sí, cancelar',
+        textoCancelar: 'No, volver',
+        peligro: true,
+      });
+      if (!aceptado) return;
+
+      const { error } = await cancelarCita(cita.cita_id);
+      if (error) {
+        if (manejarSesionExpirada(error)) return;
+        avisar(mensajeDeError(error), 'error');
+      } else {
+        avisar('Cita cancelada. La hora quedó libre para otra persona.');
+      }
+      // En los dos casos se recarga: si falló (p. ej. TRANSICION_INVALIDA porque la
+      // clínica ya la había cambiado) la lista muestra el estado real.
+      await cargar();
+      // El botón pulsado ya no existe: el foco va al panel para no perderlo.
+      panelProximas.focus();
+    }
+
+    // ---------- Pestañas (patrón "tabs" de WAI-ARIA APG) ----------
+    function activarPestanas() {
+      pestanas.forEach((pestana, indice) => {
+        pestana.addEventListener('click', () => seleccionar(indice));
+        pestana.addEventListener('keydown', (evento) => {
+          const destino = {
+            ArrowRight: (indice + 1) % pestanas.length,
+            ArrowLeft: (indice - 1 + pestanas.length) % pestanas.length,
+            Home: 0,
+            End: pestanas.length - 1,
+          }[evento.key];
+          if (destino === undefined) return;
+          evento.preventDefault();
+          seleccionar(destino);
+          pestanas[destino].focus();
+        });
+      });
+    }
+
+    function seleccionar(indice) {
+      pestanas.forEach((pestana, i) => {
+        const activa = i === indice;
+        pestana.setAttribute('aria-selected', String(activa));
+        pestana.tabIndex = activa ? 0 : -1; // solo la activa queda en el orden de Tab
+        document.getElementById(pestana.getAttribute('aria-controls')).hidden = !activa;
+      });
+    }
+  </script>
+</body>
+</html>

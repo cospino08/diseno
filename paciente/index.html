@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inicio · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Encabezado común del paciente (wireframe A-04). auth.js activa el menú. -->
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="index.html">Inicio</a></li>
+          <li><a class="menu__enlace" href="buscar.html">Reservar cita</a></li>
+          <li><a class="menu__enlace" href="mis-citas.html">Mis citas</a></li>
+          <li><a class="menu__enlace" href="perfil.html">Mi perfil</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- P-01. El contenido se llena después de comprobar la sesión (protegerPagina). -->
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1 id="saludo">Hola</h1>
+
+    <!-- Paso 1 de la reserva (RNF-03: máximo 5 pasos después de iniciar sesión). -->
+    <div class="acciones">
+      <a class="boton boton--primario" href="buscar.html">Reservar cita</a>
+      <a class="boton boton--secundario" href="mis-citas.html">Ver mis citas</a>
+    </div>
+
+    <section aria-labelledby="titulo-proxima">
+      <h2 id="titulo-proxima">Tu próxima cita</h2>
+      <div id="zona-proxima"></div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { protegerPagina, manejarSesionExpirada } from '../assets/js/auth.js';
+    import { mostrarCargando, mostrarVacio, mostrarError, limpiar } from '../assets/js/ui/estados.js';
+    import { misCitas, separarCitas, crearTarjetaCita } from './comun.js';
+
+    const acceso = await protegerPagina({ roles: ['paciente'] });
+    if (acceso) {
+      // El nombre viene de la base: textContent, nunca innerHTML.
+      const nombre = acceso.perfil.nombres.split(' ')[0];
+      document.getElementById('saludo').textContent = `Hola, ${nombre}`;
+      await cargarProximaCita();
+    }
+
+    async function cargarProximaCita() {
+      const zona = document.getElementById('zona-proxima');
+      mostrarCargando(zona, 'Consultando tus citas…');
+
+      const { data, error } = await misCitas();
+      if (error) {
+        if (manejarSesionExpirada(error)) return;
+        return mostrarError(zona, 'No pudimos cargar tus citas.', { reintentar: cargarProximaCita });
+      }
+
+      const [proxima] = separarCitas(data).proximas;
+      if (!proxima) {
+        return mostrarVacio(zona, 'No tienes citas próximas.', { texto: 'Reservar cita', href: 'buscar.html' });
+      }
+
+      const tarjeta = crearTarjetaCita(proxima, { nivel: 'h3' });
+      const enlace = document.createElement('a');
+      enlace.href = 'mis-citas.html';
+      enlace.textContent = 'Ver en mis citas';
+      const parrafo = document.createElement('p');
+      parrafo.append(enlace);
+      tarjeta.append(parrafo);
+
+      limpiar(zona);
+      zona.append(tarjeta);
+    }
+  </script>
+</body>
+</html>

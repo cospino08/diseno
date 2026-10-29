@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi perfil · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="index.html">Inicio</a></li>
+          <li><a class="menu__enlace" href="buscar.html">Reservar cita</a></li>
+          <li><a class="menu__enlace" href="mis-citas.html">Mis citas</a></li>
+          <li><a class="menu__enlace" href="perfil.html">Mi perfil</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- P-05. Es la única página del paciente que NO exige perfil completo
+       (si no, habría un bucle de redirecciones). -->
+  <main id="contenido" class="contenedor contenedor--estrecho" tabindex="-1">
+    <div id="zona-aviso"></div>
+    <h1>Mi perfil</h1>
+    <p>Correo: <strong id="correo"></strong></p>
+
+    <!-- Solo las 4 columnas que la base deja editar (contrato 2.1). El rol no
+         aparece: lo cambia únicamente un admin con asignar_rol. -->
+    <form id="form-perfil" class="formulario" novalidate hidden>
+      <div class="campo">
+        <label for="nombres">Nombres y apellidos <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="nombres" name="nombres" type="text" autocomplete="name"
+               maxlength="100" required aria-describedby="nombres-error">
+        <p id="nombres-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="documento">Documento de identidad <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="documento" name="documento" type="text" autocomplete="off"
+               maxlength="20" required aria-describedby="documento-ayuda documento-error">
+        <p id="documento-ayuda" class="campo__ayuda">Letras, números o guion, sin espacios. Usa datos ficticios.</p>
+        <p id="documento-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="telefono">Teléfono <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="telefono" name="telefono" type="tel" inputmode="tel"
+               autocomplete="tel" maxlength="20" required aria-describedby="telefono-error">
+        <p id="telefono-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="fecha_nacimiento">Fecha de nacimiento <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="fecha_nacimiento" name="fecha_nacimiento" type="date"
+               autocomplete="bday" required aria-describedby="fecha_nacimiento-error">
+        <p id="fecha_nacimiento-error" class="campo__error" hidden></p>
+      </div>
+      <div id="resultado-perfil"></div>
+      <button class="boton boton--primario boton--bloque" type="submit">Guardar cambios</button>
+    </form>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { protegerPagina, manejarSesionExpirada, rutaSegura, urlDe, perfilCompleto } from '../assets/js/auth.js';
+    import { actualizarMiPerfil } from '../assets/js/datos/perfiles.js';
+    import { codigoDeError, MENSAJES } from '../assets/js/ui/mensajes.js';
+    import { mostrarError, avisar, crearAlerta, limpiar } from '../assets/js/ui/estados.js';
+    import { conBotonOcupado } from '../assets/js/ui/formularios.js';
+    import { hoyEnBogota } from '../assets/js/ui/formato.js';
+    import {
+      validarFormulario, activarValidacionAlSalir, mostrarErrorCampo, validarNombres,
+      validarDocumento, validarTelefono, validarFechaNacimiento, normalizarEspacios,
+    } from '../assets/js/validacion.js';
+
+    const formulario = document.getElementById('form-perfil');
+    const resultado = document.getElementById('resultado-perfil');
+    const parametros = new URLSearchParams(location.search);
+    const reglas = {
+      nombres: validarNombres,
+      documento: validarDocumento,
+      telefono: validarTelefono,
+      fecha_nacimiento: validarFechaNacimiento,
+    };
+
+    const acceso = await protegerPagina({ roles: ['paciente'], exigirPerfilCompleto: false });
+    if (acceso) iniciar(acceso.perfil);
+
+    function iniciar(perfil) {
+      // Se muestra el aviso si se llegó obligado (primer ingreso o PERFIL_INCOMPLETO)
+      // o si, por cualquier camino, al perfil todavía le faltan datos.
+      const completando = parametros.get('completar') === '1' || !perfilCompleto(perfil);
+      if (completando) {
+        document.getElementById('zona-aviso').append(crearAlerta('info',
+          'Completa tu documento, teléfono y fecha de nacimiento para poder reservar citas.',
+          'Completa tu perfil'));
+      }
+
+      document.getElementById('correo').textContent = perfil.email ?? perfil.correo ?? '';
+      const campos = formulario.elements;
+      campos.nombres.value = perfil.nombres ?? '';
+      campos.documento.value = perfil.documento ?? '';
+      campos.telefono.value = perfil.telefono ?? '';
+      campos.fecha_nacimiento.value = perfil.fecha_nacimiento ?? '';
+      campos.fecha_nacimiento.max = hoyEnBogota();
+      formulario.hidden = false;
+
+      activarValidacionAlSalir(formulario, reglas);
+      formulario.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+        limpiar(resultado);
+        if (!validarFormulario(formulario, reglas)) return;
+        conBotonOcupado(formulario, 'Guardando…', () => guardar(completando));
+      });
+    }
+
+    async function guardar(completando) {
+      const campos = formulario.elements;
+      // datos/perfiles.js solo envía estas 4 columnas. Aunque alguien agregara
+      // `rol` desde la consola, el permiso por columna de la base lo rechaza (CP-06).
+      const { data, error } = await actualizarMiPerfil({
+        nombres: normalizarEspacios(campos.nombres.value),
+        documento: campos.documento.value.trim(),
+        telefono: campos.telefono.value.trim(),
+        fecha_nacimiento: campos.fecha_nacimiento.value,
+      });
+
+      if (error) {
+        if (manejarSesionExpirada(error)) return;
+        if (codigoDeError(error) === 'DOCUMENTO_DUPLICADO') {
+          mostrarErrorCampo(campos.documento, MENSAJES.DOCUMENTO_DUPLICADO);
+          campos.documento.focus();
+          return;
+        }
+        return mostrarError(resultado, error);
+      }
+
+      if (completando) {
+        // Vuelve a donde iba (si es una página de este sitio) o al inicio.
+        location.assign(rutaSegura(parametros.get('volver')) ?? urlDe('paciente/index.html'));
+        return;
+      }
+      avisar('Perfil actualizado.');
+      const usuario = document.querySelector('[data-usuario]');
+      if (usuario && data) usuario.textContent = `${data.nombres} · Paciente`;
+    }
+  </script>
+</body>
+</html>

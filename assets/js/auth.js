@@ -36,24 +36,13 @@ import { mostrarAccesoDenegado, mostrarError } from './ui/estados.js';
 
 // ---------- Cliente de Supabase ----------
 //
-// El cliente lo crea P4 en assets/js/datos/cliente.js (plan, sección 11). Mientras
-// ese archivo no esté fusionado en main, se usa un STUB TEMPORAL que crea el
-// mismo cliente a partir de config.js, para poder probar el acceso.
-// TODO(P3): eliminar el bloque catch cuando cliente.js exista en main
-// (pedido en docs/ESTADO.md, sección de P4).
-// Se usa await en el nivel superior del módulo (top-level await), que soportan
-// todos los navegadores modernos (Chrome y Firefox 89+).
-let clienteSupabase;
-try {
-  const modulo = await import('./datos/cliente.js');
-  clienteSupabase = modulo.supabase ?? modulo.default;
-} catch {
-  console.warn('auth.js: no existe assets/js/datos/cliente.js; se usa el cliente temporal.');
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
-  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./config.js');
-  clienteSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-export const supabase = clienteSupabase;
+// Hay un solo cliente en toda la aplicación y lo crea P4 en
+// assets/js/datos/cliente.js (plan, sección 11). Aquí solo se importa y se
+// reexporta, para que las páginas que ya importan `supabase` desde auth.js sigan
+// funcionando. (En la ronda 1 había un cliente temporal mientras cliente.js no
+// existía; se quitó en la ronda 2.)
+import { supabase } from './datos/cliente.js';
+export { supabase };
 
 // ---------- Rutas ----------
 //
@@ -215,15 +204,15 @@ export async function cambiarContrasena(nueva) {
 
 // ---------- Perfil ----------
 
-// Columnas del perfil según la sección 9 del enunciado y el plan (P4). Si P2
-// cambia los nombres en docs/contrato_api.md, se ajusta solo esta línea.
-const COLUMNAS_PERFIL = 'id, nombres, documento, telefono, fecha_nacimiento, rol, activo';
+// Columnas de profiles según docs/contrato_api.md (v1.1, sección 2.1). Si P2
+// cambia los nombres en el contrato, se ajusta solo esta línea.
+const COLUMNAS_PERFIL = 'id, email, nombres, documento, telefono, fecha_nacimiento, rol, activo';
 
 /**
  * Lee el perfil del usuario autenticado. La RLS de profiles solo deja leer la
  * fila propia, así que el filtro por id es para pedir una fila, no por seguridad.
- * Nota: cuando P4 publique assets/js/datos/perfiles.js, esta consulta puede
- * pasar a ese módulo.
+ * Se queda aquí (y no en datos/perfiles.js) porque auth.js necesita también el
+ * usuario de Auth para el correo y para detectar la sesión vencida.
  */
 export async function obtenerPerfil() {
   try {
@@ -355,7 +344,13 @@ function vigilarSesion() {
 export function manejarSesionExpirada(error) {
   if (codigoDeError(error) !== 'SESION_EXPIRADA') return false;
   cierreVoluntario = true; // evita una segunda redirección desde el vigilante
-  irAlInicioDeSesion('sesion-expirada', rutaActual());
+  const volver = rutaActual();
+  // Se olvida la sesión guardada en ESTE navegador (scope 'local': no cierra las
+  // sesiones de otros dispositivos). Si no, index.html vería una sesión
+  // "existente", aunque la base ya la rechazó, y devolvería al usuario aquí.
+  supabase.auth.signOut({ scope: 'local' })
+    .catch(() => {})
+    .finally(() => irAlInicioDeSesion('sesion-expirada', volver));
   return true;
 }
 

@@ -29,12 +29,17 @@
 
 import { hoyEnBogota } from './ui/formato.js';
 
-// ---------- Límites (coordinar con los CHECK de P2 en sql/esquema.sql) ----------
+// ---------- Límites (coordinados con los CHECK de P2 en sql/esquema.sql) ----------
+// Regla: el cliente puede ser IGUAL o MÁS estricto que la base, nunca más
+// permisivo; si no, el usuario pasaría esta validación y la base lo rechazaría.
 
 export const LIMITES = Object.freeze({
   contrasenaMin: 8,
   nombresMin: 2,
-  nombresMax: 100,
+  nombresMax: 100,    // la base acepta hasta 120 (ck_profiles_nombres)
+  documentoMin: 4,    // ck_profiles_documento: ^[A-Za-z0-9-]{4,20}$
+  documentoMax: 20,
+  telefonoMax: 20,    // ck_profiles_telefono: ^[0-9 +()-]{7,20}$ (largo total)
   motivoMax: 200,     // plan P15: el motivo se limita a 200 caracteres
   edadMax: 120,
 });
@@ -92,29 +97,37 @@ export function validarNombres(valor) {
 }
 
 /**
- * Documento de identidad. Se aceptan letras, números y guion (de 5 a 20
- * caracteres) para cubrir cédula, tarjeta de identidad, pasaporte y los datos
+ * Documento de identidad. Se aceptan letras, números y guion (de 4 a 20
+ * caracteres, igual que ck_profiles_documento) para cubrir cédula, tarjeta de identidad, pasaporte y los datos
  * ficticios 'TEST-0001' del plan (P15). No se valida el dígito de verificación:
  * es un sistema académico con datos inventados.
  */
 export function validarDocumento(valor) {
   const documento = String(valor ?? '').trim();
   if (!documento) return 'Escribe tu número de documento.';
-  if (!/^[A-Za-z0-9-]{5,20}$/.test(documento)) {
-    return 'El documento debe tener de 5 a 20 caracteres: letras, números o guion, sin espacios.';
+  const patron = new RegExp(`^[A-Za-z0-9-]{${LIMITES.documentoMin},${LIMITES.documentoMax}}$`);
+  if (!patron.test(documento)) {
+    return `El documento debe tener de ${LIMITES.documentoMin} a ${LIMITES.documentoMax} caracteres: letras, números o guion, sin espacios.`;
   }
   return '';
 }
 
-/** Teléfono: de 7 a 15 dígitos. Se permiten espacios, guiones, paréntesis y '+' al inicio. */
+/**
+ * Teléfono: de 7 a 15 dígitos y máximo 20 caracteres en total. Se permiten
+ * espacios, guiones, paréntesis y '+' al inicio (ck_profiles_telefono).
+ */
 export function validarTelefono(valor) {
   const telefono = String(valor ?? '').trim();
   if (!telefono) return 'Escribe tu número de teléfono.';
-  if (!/^\+?[\d\s()-]+$/.test(telefono)) {
+  // Espacio literal y no \s: la base no acepta tabulaciones ni saltos de línea.
+  if (!/^\+?[0-9 ()-]+$/.test(telefono)) {
     return 'El teléfono solo puede tener números, espacios, guiones y "+".';
   }
   const digitos = telefono.replace(/\D/g, '').length;
   if (digitos < 7 || digitos > 15) return 'El teléfono debe tener entre 7 y 15 dígitos.';
+  if (telefono.length > LIMITES.telefonoMax) {
+    return `El teléfono puede tener máximo ${LIMITES.telefonoMax} caracteres. Quita espacios o guiones.`;
+  }
   return '';
 }
 

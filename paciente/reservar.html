@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmar reserva · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="index.html">Inicio</a></li>
+          <li><a class="menu__enlace" href="buscar.html">Reservar cita</a></li>
+          <li><a class="menu__enlace" href="mis-citas.html">Mis citas</a></li>
+          <li><a class="menu__enlace" href="perfil.html">Mi perfil</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- P-03. Paso 4 (último) de la reserva. -->
+  <main id="contenido" class="contenedor contenedor--estrecho" tabindex="-1">
+    <h1 id="titulo">Confirma tu cita</h1>
+    <div id="zona-franja"></div>
+
+    <form id="form-reservar" class="formulario" novalidate hidden>
+      <div class="campo">
+        <label for="motivo">Motivo de la consulta (opcional)</label>
+        <textarea class="control" id="motivo" name="motivo" rows="3" maxlength="200"
+                  aria-describedby="motivo-ayuda motivo-contador motivo-error"></textarea>
+        <p id="motivo-ayuda" class="campo__ayuda">
+          Por ejemplo: "control anual". No escribas diagnósticos ni datos clínicos.
+        </p>
+        <!-- El contador no es aria-live: anunciarlo en cada tecla sería ruidoso.
+             Se lee con el campo gracias a aria-describedby. -->
+        <p id="motivo-contador" class="campo__ayuda texto-pequeno">0/200</p>
+        <p id="motivo-error" class="campo__error" hidden></p>
+      </div>
+      <div id="resultado-reserva"></div>
+      <div class="acciones">
+        <button class="boton boton--primario" type="submit">Confirmar reserva</button>
+        <a class="boton boton--secundario" id="cambiar-hora" href="buscar.html">Cambiar hora</a>
+      </div>
+    </form>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { protegerPagina, manejarSesionExpirada, urlDe } from '../assets/js/auth.js';
+    import { franjasDisponibles, reservarCita } from '../assets/js/datos/citas.js';
+    import { codigoDeError } from '../assets/js/ui/mensajes.js';
+    import { mostrarCargando, mostrarError, mostrarAccesoDenegado, limpiar } from '../assets/js/ui/estados.js';
+    import { conBotonOcupado, contadorDeCaracteres } from '../assets/js/ui/formularios.js';
+    import { formatearFecha, formatearFechaLarga, formatearHora } from '../assets/js/ui/formato.js';
+    import { validarFormulario, validarMotivo, normalizarEspacios } from '../assets/js/validacion.js';
+    import { urlBuscar } from './comun.js';
+
+    const parametros = new URLSearchParams(location.search);
+    const filtros = {
+      especialidad: parametros.get('especialidad'),
+      profesional: parametros.get('profesional'),
+      fecha: parametros.get('fecha'),
+    };
+    const idFranja = Number(parametros.get('franja'));
+
+    const formulario = document.getElementById('form-reservar');
+    const zonaFranja = document.getElementById('zona-franja');
+    const resultado = document.getElementById('resultado-reserva');
+
+    // Si la reserva falla por uno de estos códigos, la hora ya no sirve: se
+    // vuelve a la búsqueda, que RECARGA la disponibilidad y explica el motivo.
+    const VOLVER_A_BUSCAR = ['FRANJA_OCUPADA', 'FRANJA_PASADA', 'FRANJA_NO_EXISTE'];
+
+    const acceso = await protegerPagina({ roles: ['paciente'] });
+    if (acceso) await iniciar();
+
+    async function iniciar() {
+      if (!Number.isInteger(idFranja) || idFranja <= 0 || !filtros.fecha) {
+        location.replace(urlBuscar(filtros)); // se llegó sin elegir hora
+        return;
+      }
+      document.getElementById('cambiar-hora').href = urlBuscar(filtros);
+
+      // No se confía en datos que vengan en la URL (se podrían editar): se pide la
+      // franja a la base. Si ya no está entre las disponibles, alguien la tomó.
+      mostrarCargando(zonaFranja, 'Verificando que la hora siga libre…');
+      const { data, error } = await franjasDisponibles({
+        especialidad: filtros.especialidad ? Number(filtros.especialidad) : null,
+        profesional: filtros.profesional ? Number(filtros.profesional) : null,
+        fecha: filtros.fecha,
+      });
+      if (error) {
+        if (manejarSesionExpirada(error)) return;
+        return mostrarError(zonaFranja, error, { reintentar: () => location.reload() });
+      }
+      const franja = data.find((f) => f.schedule_id === idFranja);
+      if (!franja) {
+        location.replace(urlBuscar({ ...filtros, aviso: 'FRANJA_NO_EXISTE' }));
+        return;
+      }
+
+      limpiar(zonaFranja);
+      zonaFranja.append(crearResumen(franja));
+      formulario.hidden = false;
+      contadorDeCaracteres(formulario.elements.motivo, document.getElementById('motivo-contador'));
+      formulario.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+        if (!validarFormulario(formulario, { motivo: validarMotivo })) return;
+        conBotonOcupado(formulario, 'Reservando…', () => reservar(franja));
+      });
+    }
+
+    /** <dl class="resumen"> con los datos de la franja (todo con textContent). */
+    function crearResumen(franja) {
+      const lista = document.createElement('dl');
+      lista.className = 'resumen tarjeta';
+      const filas = [
+        ['Fecha', formatearFechaLarga(franja.fecha)],
+        ['Hora', `${formatearHora(franja.hora_inicio)} – ${formatearHora(franja.hora_fin)}`],
+        ['Profesional', franja.profesional],
+        ['Especialidad', franja.especialidad],
+      ];
+      for (const [termino, valor] of filas) {
+        const fila = document.createElement('div');
+        const dt = document.createElement('dt');
+        dt.textContent = termino;
+        const dd = document.createElement('dd');
+        dd.textContent = valor;
+        fila.append(dt, dd);
+        lista.append(fila);
+      }
+      return lista;
+    }
+
+    async function reservar(franja) {
+      limpiar(resultado);
+      const motivo = normalizarEspacios(formulario.elements.motivo.value) || null;
+
+      // La base decide todo: que sea paciente, que el perfil esté completo, que la
+      // franja siga libre y que nadie la reserve al mismo tiempo (CP-02). Este
+      // botón deshabilitado solo evita el doble clic.
+      const { error } = await reservarCita(franja.schedule_id, motivo);
+      if (!error) return mostrarConfirmacion(franja);
+
+      if (manejarSesionExpirada(error)) return;
+      const codigo = codigoDeError(error);
+      if (VOLVER_A_BUSCAR.includes(codigo)) {
+        location.replace(urlBuscar({ ...filtros, aviso: codigo }));
+        return;
+      }
+      if (codigo === 'PERFIL_INCOMPLETO') {
+        const destino = new URL(urlDe('paciente/perfil.html'));
+        destino.searchParams.set('completar', '1');
+        destino.searchParams.set('volver', location.pathname + location.search);
+        location.assign(destino.href);
+        return;
+      }
+      if (codigo === 'SOLO_PACIENTES') {
+        formulario.hidden = true;
+        return mostrarAccesoDenegado(zonaFranja, {
+          texto: 'Solo las cuentas de paciente pueden reservar citas.',
+          enlace: { texto: 'Volver al inicio', href: 'index.html' },
+        });
+      }
+      // Red u otro error: se queda en la página con el botón habilitado.
+      mostrarError(resultado, error);
+    }
+
+    /** P-03b: éxito. Reemplaza el contenido y mueve el foco al título. */
+    function mostrarConfirmacion(franja) {
+      const main = document.querySelector('main');
+      const titulo = document.createElement('h1');
+      titulo.tabIndex = -1;
+      titulo.textContent = '✔ ¡Cita reservada!';
+
+      const parrafos = [
+        'Tu cita quedó registrada con estado Programada.',
+        `${formatearFecha(franja.fecha)} · ${formatearHora(franja.hora_inicio)}`,
+        `${franja.profesional} · ${franja.especialidad}`,
+        'Puedes cancelarla hasta 2 horas antes desde Mis citas.',
+      ].map((texto) => {
+        const p = document.createElement('p');
+        p.textContent = texto;
+        return p;
+      });
+
+      const contenedor = document.createElement('div');
+      contenedor.className = 'alerta alerta--exito';
+      contenedor.setAttribute('role', 'status');
+      const cuerpo = document.createElement('div');
+      cuerpo.className = 'alerta__cuerpo';
+      cuerpo.append(...parrafos);
+      contenedor.append(cuerpo);
+
+      const acciones = document.createElement('div');
+      acciones.className = 'acciones';
+      const misCitas = document.createElement('a');
+      misCitas.className = 'boton boton--primario';
+      misCitas.href = 'mis-citas.html';
+      misCitas.textContent = 'Ver mis citas';
+      const inicio = document.createElement('a');
+      inicio.className = 'boton boton--secundario';
+      inicio.href = 'index.html';
+      inicio.textContent = 'Volver al inicio';
+      acciones.append(misCitas, inicio);
+
+      document.title = `Cita reservada · Clínica San Rafael`;
+      main.replaceChildren(titulo, contenedor, acciones);
+      titulo.focus();
+    }
+  </script>
+</body>
+</html>
