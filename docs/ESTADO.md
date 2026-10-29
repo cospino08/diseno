@@ -28,7 +28,16 @@ en `.gitignore`: GitHub Pages la necesita publicada. Nadie usa la `service_role`
 
 **Hecho:**
 
+- `docs/contrato_api.md` v1.0 publicado (rama `p2/contrato-api`). **P3 y P4: ya pueden
+  programar contra él.** Además de lo del plan, añade las RPC `rol_actual`, `mis_citas`,
+  `citas_admin`, `cambiar_activo_perfil` y `anonimizar_paciente`, y los códigos
+  `FRANJA_CON_CITA` y `DATOS_INVALIDOS`. Los errores llegan en `error.message` con el código
+  exacto (sección 4).
+
 **Pendiente:**
+
+- `sql/esquema.sql`, `sql/politicas_rls.sql`, `sql/datos_prueba.sql`,
+  `sql/pruebas_seguridad.sql` y `docs/modelo_datos/`.
 
 **Bloqueos:**
 
