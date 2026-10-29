@@ -86,8 +86,9 @@ RNF-01..RNF-11, CU-01..CU-12), plan de pruebas (CP-01..CP-27) y trazabilidad. En
 **Pendiente:**
 
 - ✅ _(coordinación)_ Scripts ejecutados en Supabase: 62/62 PASA.
-- Que el coordinador ejecute en Supabase `datos_pruebas_especiales.sql` y la nueva
-  versión de `pruebas_seguridad.sql` (pedido abajo, en la sección del coordinador).
+- ✅ _(coordinación, 29/10)_ Ejecutados en Supabase `datos_pruebas_especiales.sql` y la nueva
+  versión de `pruebas_seguridad.sql`: **72/72 PASA**. Evidencia en
+  `docs/pruebas/evidencias/pruebas_seguridad_supabase_2026-10-29.md`.
 - Pruebas desde el navegador (`docs/modelo_datos/pruebas_seguridad.md`, sección 2) cuando
   las páginas estén publicadas.
 
@@ -279,6 +280,8 @@ contrato.
 
 ✅ _(coordinación, 28/10)_ Hechos los dos pedidos: Redirect URLs y contraseña mínima de 8.
 GitHub Pages activo en `https://cospino08.github.io/diseno/`.
+- ✅ _(coordinación, 29/10)_ Hecho: día de carga CP-17 = **2027-01-27** (500 citas de
+  profesional1); cita CP-18 = 2026-10-30 08:00 con la Dra. Gómez; 72/72 PASA.
 - *(de P2, 29/10)* En el SQL Editor de Supabase: (1) ejecutar `sql/datos_pruebas_especiales.sql`
   (no toca lo ya cargado) y anotar la fecha del "día de carga CP-17" que muestra al final;
   (2) ejecutar la nueva versión de `sql/pruebas_seguridad.sql` y confirmar **72/72 PASA**
