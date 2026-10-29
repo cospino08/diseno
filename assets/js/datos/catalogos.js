@@ -117,13 +117,15 @@ export function cambiarActivoProfesional(id, activo) {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Franjas de un profesional entre dos fechas 'AAAA-MM-DD' (incluidas), activas o no.
+ * Franjas de un profesional entre dos fechas 'AAAA-MM-DD' (incluidas), activas o no, con
+ * las citas que tienen (contrato 2.4). Para saber si está bloqueada por una cita activa,
+ * usa citaActivaDe().
  * Para buscar franjas LIBRES (paciente) usa franjasDisponibles() de citas.js.
  */
-export function listarFranjas({ profesional, desde, hasta }) {
+export function listarFranjas({ profesional, desde, hasta = desde }) {
   return ejecutar(() => supabase
     .from('schedules')
-    .select('id, professional_id, fecha, hora_inicio, hora_fin, activo')
+    .select('id, professional_id, fecha, hora_inicio, hora_fin, activo, citas:appointments ( id, estado )')
     .eq('professional_id', profesional)
     .gte('fecha', desde)
     .lte('fecha', hasta)
@@ -131,10 +133,19 @@ export function listarFranjas({ profesional, desde, hasta }) {
     .order('hora_inicio'));
 }
 
+// Una cita "activa" bloquea mover o desactivar su franja (trigger de P2, FRANJA_CON_CITA).
+const ESTADOS_ACTIVOS = ['programada', 'confirmada'];
+
+/** Cita activa de una franja devuelta por listarFranjas(), o null si está libre. */
+export function citaActivaDe(franja) {
+  return (franja.citas ?? []).find((cita) => ESTADOS_ACTIVOS.includes(cita.estado)) ?? null;
+}
+
 /**
- * Crea en bloque franjas de `minutos` minutos entre `inicio` y `fin` ('HH:MM') de una fecha.
+ * Crea en bloque franjas de `minutos` minutos (10 a 240) entre `inicio` y `fin` ('HH:MM')
+ * de una fecha (contrato 3.10). Es todo o nada: si una sola se cruza, no crea ninguna.
  * Devuelve en `data` el número de franjas creadas.
- * Errores: NO_AUTORIZADO, HORARIO_SUPERPUESTO (la restricción de exclusión las rechaza, CP-11).
+ * Errores: NO_AUTORIZADO, DATOS_INVALIDOS, FRANJA_PASADA, HORARIO_SUPERPUESTO (CP-11).
  */
 export function generarFranjas({ profesional, fecha, inicio, fin, minutos }) {
   return ejecutar(() => supabase.rpc('generar_franjas', {
@@ -148,7 +159,7 @@ export function generarFranjas({ profesional, fecha, inicio, fin, minutos }) {
 
 /**
  * Mueve una franja a otra fecha u hora.
- * Si la franja tiene una cita activa, el trigger de P2 lo rechaza (plan P12, CP-12).
+ * Errores: FRANJA_CON_CITA si tiene una cita activa (plan P12, CP-12), HORARIO_SUPERPUESTO.
  */
 export function actualizarFranja(id, { fecha, horaInicio, horaFin }) {
   return ejecutar(() => supabase
@@ -159,7 +170,7 @@ export function actualizarFranja(id, { fecha, horaInicio, horaFin }) {
     .single());
 }
 
-/** Activa o desactiva una franja. Rechazado si tiene una cita activa (plan P12). */
+/** Activa o desactiva una franja. Errores: FRANJA_CON_CITA (plan P12), HORARIO_SUPERPUESTO al reactivar. */
 export function cambiarActivoFranja(id, activo) {
   return ejecutar(() => supabase
     .from('schedules')

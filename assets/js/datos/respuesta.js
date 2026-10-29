@@ -3,59 +3,49 @@
 // Todos los módulos de assets/js/datos/ devuelven SIEMPRE un objeto { data, error }:
 //
 //   - Si todo sale bien:   { data: <resultado>, error: null }
-//   - Si algo falla:       { data: null, error: { codigo, detalle } }
+//   - Si algo falla:       { data: null, error: { codigo, message, code, details, status } }
 //
-// `codigo` es uno de los códigos del contrato (docs/contrato_api.md), por ejemplo
-// 'FRANJA_OCUPADA' o 'TRANSICION_INVALIDA', o uno de los códigos técnicos de abajo.
-// assets/js/ui/mensajes.js (P3) traduce ese código a un mensaje claro para la persona.
-// `detalle` es el mensaje original de Supabase: sirve para depurar, NO para mostrarlo.
+// `error.codigo` es el código para decidir qué hacer en la página. Sale de
+// codigoDeError() de assets/js/ui/mensajes.js (P3), para que todo el proyecto use UN
+// SOLO catálogo de códigos: los de negocio del contrato ('FRANJA_OCUPADA',
+// 'TRANSICION_INVALIDA'...) y los técnicos de P3 ('SIN_CONEXION', 'SESION_EXPIRADA',
+// 'NO_AUTORIZADO', 'DATO_DUPLICADO', 'DESCONOCIDO'...).
+//
+// `message`, `code`, `details` y `status` se conservan tal como los manda Supabase. Así el
+// mismo objeto se puede pasar directamente a mostrarError() o mensajeDeError() de ui/,
+// que leen esas propiedades para traducir el mensaje. `details` es técnico: va a la
+// consola, nunca a la pantalla.
 //
 // Las funciones nunca lanzan excepciones: así cada página solo tiene que revisar `error`.
+import { codigoDeError as codigoSegunMensajes } from '../ui/mensajes.js';
 
-// Códigos técnicos que no vienen de las RPC sino de la red, la sesión o PostgreSQL.
-// Se coordinan con P3 para que mensajes.js también los traduzca.
-export const ERROR_RED = 'ERROR_RED';
-export const SESION_EXPIRADA = 'SESION_EXPIRADA';
-export const NO_AUTORIZADO = 'NO_AUTORIZADO';
-export const HORARIO_SUPERPUESTO = 'HORARIO_SUPERPUESTO';
-export const DUPLICADO = 'DUPLICADO';
-export const EN_USO = 'EN_USO';
-export const ERROR_DESCONOCIDO = 'ERROR_DESCONOCIDO';
-
-// Las RPC de P2 lanzan `raise exception 'CODIGO'` o `'CODIGO: detalle'`
-// (por ejemplo 'TRANSICION_INVALIDA: atendida -> programada'). PostgreSQL devuelve ese texto
-// en error.message, así que el código es la palabra en MAYÚSCULAS del inicio.
-const PATRON_CODIGO_CONTRATO = /^([A-Z][A-Z0-9_]{2,})(?=$|[:\s])/;
+// Las RPC de P2 lanzan `raise exception 'CODIGO'` (contrato, sección 4.1). Si llega un
+// código de negocio que ui/mensajes.js todavía no conoce, se conserva tal cual en vez de
+// convertirlo en 'DESCONOCIDO', para que la página pueda reaccionar a él.
+const PATRON_CODIGO_CONTRATO = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$/;
 
 /**
- * Convierte un error de Supabase (o una excepción de red) en un código del contrato.
+ * Código de un error de Supabase, de red o de JavaScript.
  * @param {object|Error} errorOriginal
  * @returns {string}
  */
 export function codigoDeError(errorOriginal) {
-  if (!errorOriginal) return ERROR_DESCONOCIDO;
-  const mensaje = String(errorOriginal.message ?? '');
-  const codigoPg = String(errorOriginal.code ?? '');
+  const codigo = codigoSegunMensajes(errorOriginal) ?? 'DESCONOCIDO';
+  const mensaje = String(errorOriginal?.message ?? '');
+  if (codigo === 'DESCONOCIDO' && PATRON_CODIGO_CONTRATO.test(mensaje)) return mensaje;
+  return codigo;
+}
 
-  // Sin conexión: fetch falla con TypeError ("Failed to fetch" en Chrome,
-  // "NetworkError" en Firefox, "Load failed" en Safari).
-  if (/failed to fetch|networkerror|load failed/i.test(mensaje)) return ERROR_RED;
-
-  // Token vencido o inválido (PostgREST responde PGRST301 / "JWT expired").
-  // Va antes del patrón del contrato porque "JWT expired" también empieza en mayúsculas.
-  if (codigoPg === 'PGRST301' || /\bjwt\b/i.test(mensaje)) return SESION_EXPIRADA;
-
-  const coincidencia = mensaje.match(PATRON_CODIGO_CONTRATO);
-  if (coincidencia) return coincidencia[1];
-
-  // Códigos estándar de PostgreSQL (https://www.postgresql.org/docs/current/errcodes-appendix.html)
-  switch (codigoPg) {
-    case '42501': return NO_AUTORIZADO;        // insufficient_privilege: RLS o GRANT lo bloquean
-    case '23P01': return HORARIO_SUPERPUESTO;  // exclusion_violation: franjas que se cruzan
-    case '23505': return DUPLICADO;            // unique_violation: p. ej. especialidad repetida
-    case '23503': return EN_USO;               // foreign_key_violation: registro referenciado
-    default: return ERROR_DESCONOCIDO;
-  }
+/** Copia las propiedades útiles del error (un Error de JS no las expone con spread). */
+export function normalizarError(errorOriginal) {
+  return {
+    codigo: codigoDeError(errorOriginal),
+    message: String(errorOriginal?.message ?? errorOriginal ?? ''),
+    code: errorOriginal?.code ?? '',
+    details: errorOriginal?.details ?? '',
+    status: errorOriginal?.status,
+    name: errorOriginal?.name,
+  };
 }
 
 /**
@@ -66,11 +56,9 @@ export function codigoDeError(errorOriginal) {
 export async function ejecutar(consulta) {
   try {
     const { data, error } = await consulta();
-    if (error) {
-      return { data: null, error: { codigo: codigoDeError(error), detalle: error.message ?? '' } };
-    }
+    if (error) return { data: null, error: normalizarError(error) };
     return { data, error: null };
   } catch (excepcion) {
-    return { data: null, error: { codigo: codigoDeError(excepcion), detalle: String(excepcion?.message ?? excepcion) } };
+    return { data: null, error: normalizarError(excepcion) };
   }
 }
