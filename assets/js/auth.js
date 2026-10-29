@@ -344,7 +344,13 @@ function vigilarSesion() {
 export function manejarSesionExpirada(error) {
   if (codigoDeError(error) !== 'SESION_EXPIRADA') return false;
   cierreVoluntario = true; // evita una segunda redirección desde el vigilante
-  irAlInicioDeSesion('sesion-expirada', rutaActual());
+  const volver = rutaActual();
+  // Se olvida la sesión guardada en ESTE navegador (scope 'local': no cierra las
+  // sesiones de otros dispositivos). Si no, index.html vería una sesión
+  // "existente", aunque la base ya la rechazó, y devolvería al usuario aquí.
+  supabase.auth.signOut({ scope: 'local' })
+    .catch(() => {})
+    .finally(() => irAlInicioDeSesion('sesion-expirada', volver));
   return true;
 }
 
