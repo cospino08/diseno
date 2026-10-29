@@ -44,7 +44,9 @@ y `▸` un enlace. Lo que va entre `{ }` es dinámico.
   incorrectos". No se dice cuál de los dos falló, para no revelar qué correos existen.
 - Correo sin confirmar: "Confirma tu correo con el enlace que te enviamos antes de iniciar
   sesión".
-- "Mostrar" alterna el tipo del campo y cambia su texto a "Ocultar". Usa `aria-pressed`.
+- "Mostrar" alterna el tipo del campo entre oculto y visible. Es un botón de alternancia:
+  su nombre accesible ("Mostrar contraseña") no cambia y el estado lo indica
+  `aria-pressed` (WCAG 2.5.3).
 
 ---
 
@@ -128,8 +130,8 @@ Paso 2, al volver desde el enlace del correo (evento `PASSWORD_RECOVERY`):
 - Paso 1: el mensaje de éxito es el mismo exista o no el correo: "Si el correo está
   registrado, recibirás un enlace en unos minutos. Revisa también la carpeta de spam". Así
   no se revela qué correos tienen cuenta (OWASP, enumeración de usuarios).
-- Paso 2: al guardar, la persona entra al inicio de su rol con el aviso "Contraseña
-  actualizada".
+- Paso 2: al guardar, la persona entra directamente al inicio de su rol (o a completar el
+  perfil, si es un paciente con el perfil incompleto).
 
 ---
 

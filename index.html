@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar sesión · Clínica San Rafael</title>
+  <meta name="description" content="Reserva y gestiona tus citas médicas en línea.">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/componentes.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <script>
+    // Script clásico (no módulo) para que corra ANTES que el cliente de Supabase:
+    // 1. Marca que hay JavaScript (el CSS solo pliega el menú si existe la clase .js).
+    // 2. Recuerda si se llegó desde el enlace de recuperación de contraseña. El
+    //    cliente de Supabase borra el #access_token…&type=recovery de la URL al
+    //    leerlo, así que hay que mirarlo antes.
+    document.documentElement.classList.add('js');
+    if (location.hash.includes('type=recovery')) document.documentElement.dataset.recuperacion = 'si';
+  </script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor contenedor--estrecho" tabindex="-1">
+    <!-- Avisos según ?motivo= (sesión expirada, cierre de sesión…). Los llena el script. -->
+    <div id="avisos-pagina"></div>
+
+    <!-- A-01 Inicio de sesión -->
+    <section id="vista-ingreso" aria-labelledby="titulo-ingreso">
+      <h1 id="titulo-ingreso">Iniciar sesión</h1>
+      <p class="texto-suave">Reserva y gestiona tus citas médicas en línea.</p>
+
+      <div id="resultado-ingreso"></div>
+      <form id="form-ingreso" class="formulario" novalidate>
+        <div class="campo">
+          <label for="ingreso-correo">Correo electrónico</label>
+          <input class="control" id="ingreso-correo" name="correo" type="email"
+                 autocomplete="email" required aria-describedby="ingreso-correo-error">
+          <p id="ingreso-correo-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="ingreso-contrasena">Contraseña</label>
+          <div class="control-con-boton">
+            <input class="control" id="ingreso-contrasena" name="contrasena" type="password"
+                   autocomplete="current-password" required aria-describedby="ingreso-contrasena-error">
+            <button class="boton boton--enlace" type="button" data-mostrar="ingreso-contrasena"
+                    aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+          </div>
+          <p id="ingreso-contrasena-error" class="campo__error" hidden></p>
+        </div>
+        <button class="boton boton--primario boton--bloque" type="submit">Iniciar sesión</button>
+      </form>
+      <p><a href="#recuperar">¿Olvidaste tu contraseña?</a></p>
+      <p>¿No tienes cuenta? <a href="registro.html">Regístrate</a></p>
+    </section>
+
+    <!-- A-03 Recuperación, paso 1: pedir el enlace -->
+    <section id="vista-recuperar" aria-labelledby="titulo-recuperar" hidden>
+      <h1 id="titulo-recuperar" tabindex="-1">Recuperar contraseña</h1>
+      <p>Escribe el correo de tu cuenta. Si existe, te enviaremos un enlace para crear una contraseña nueva.</p>
+
+      <div id="resultado-recuperar"></div>
+      <form id="form-recuperar" class="formulario" novalidate>
+        <div class="campo">
+          <label for="recuperar-correo">Correo electrónico</label>
+          <input class="control" id="recuperar-correo" name="correo" type="email"
+                 autocomplete="email" required aria-describedby="recuperar-correo-error">
+          <p id="recuperar-correo-error" class="campo__error" hidden></p>
+        </div>
+        <button class="boton boton--primario boton--bloque" type="submit">Enviar instrucciones</button>
+      </form>
+      <p><a href="#">Volver a iniciar sesión</a></p>
+    </section>
+
+    <!-- A-03 Recuperación, paso 2: contraseña nueva (al volver desde el correo) -->
+    <section id="vista-nueva-contrasena" aria-labelledby="titulo-nueva" hidden>
+      <h1 id="titulo-nueva" tabindex="-1">Crea una contraseña nueva</h1>
+
+      <div id="resultado-nueva"></div>
+      <form id="form-nueva" class="formulario" novalidate>
+        <div class="campo">
+          <label for="nueva-contrasena">Contraseña nueva</label>
+          <div class="control-con-boton">
+            <input class="control" id="nueva-contrasena" name="contrasena" type="password"
+                   autocomplete="new-password" required
+                   aria-describedby="nueva-contrasena-ayuda nueva-contrasena-error">
+            <button class="boton boton--enlace" type="button" data-mostrar="nueva-contrasena"
+                    aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+          </div>
+          <p id="nueva-contrasena-ayuda" class="campo__ayuda">Mínimo 8 caracteres, con letras y números.</p>
+          <p id="nueva-contrasena-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="nueva-repetir">Repite la contraseña</label>
+          <input class="control" id="nueva-repetir" name="repetir" type="password"
+                 autocomplete="new-password" required aria-describedby="nueva-repetir-error">
+          <p id="nueva-repetir-error" class="campo__error" hidden></p>
+        </div>
+        <button class="boton boton--primario boton--bloque" type="submit">Guardar contraseña</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    // Lógica de A-01 y A-03. Todo texto dinámico entra con textContent (vía estados.js).
+    import {
+      supabase, iniciarSesion, enviarRecuperacion, cambiarContrasena,
+      obtenerPerfil, destinoTrasIngresar, rutaSegura,
+    } from './assets/js/auth.js';
+    import { validarFormulario, validarCorreo, validarContrasena, coincideCon, requerido }
+      from './assets/js/validacion.js';
+    import { crearAlerta, mostrarError, mostrarExito } from './assets/js/ui/estados.js';
+    import { codigoDeError } from './assets/js/ui/mensajes.js';
+    import { activarMostrarContrasena, conBotonOcupado } from './assets/js/ui/formularios.js';
+
+    const parametros = new URLSearchParams(location.search);
+    const volver = rutaSegura(parametros.get('volver'));
+
+    // ---- Aviso según el motivo por el que se llegó aquí ----
+    const AVISOS = {
+      'sesion-expirada': ['aviso', 'Tu sesión expiró. Inicia sesión de nuevo para continuar.'],
+      'sin-sesion': ['info', 'Inicia sesión para continuar.'],
+      cerrada: ['exito', 'Cerraste sesión correctamente.'],
+      inactiva: ['error', 'Tu cuenta está desactivada. Comunícate con la clínica.'],
+    };
+    const aviso = AVISOS[parametros.get('motivo')];
+    if (aviso) document.getElementById('avisos-pagina').append(crearAlerta(...aviso));
+
+    // ---- Vistas: ingreso (por defecto), #recuperar y contraseña nueva ----
+    const vistas = {
+      ingreso: document.getElementById('vista-ingreso'),
+      recuperar: document.getElementById('vista-recuperar'),
+      nueva: document.getElementById('vista-nueva-contrasena'),
+    };
+    let enRecuperacion = document.documentElement.dataset.recuperacion === 'si';
+
+    function mostrarVista(nombre, { enfocar = false } = {}) {
+      for (const [clave, seccion] of Object.entries(vistas)) seccion.hidden = clave !== nombre;
+      // Al cambiar de vista, el foco va al título para que el lector de pantalla lo anuncie.
+      if (enfocar) vistas[nombre].querySelector('h1').focus();
+    }
+    function vistaSegunHash({ enfocar }) {
+      if (enRecuperacion) return mostrarVista('nueva', { enfocar });
+      mostrarVista(location.hash === '#recuperar' ? 'recuperar' : 'ingreso', { enfocar });
+    }
+    window.addEventListener('hashchange', () => vistaSegunHash({ enfocar: true }));
+
+    // Supabase avisa con PASSWORD_RECOVERY cuando se llega desde el enlace del correo.
+    supabase.auth.onAuthStateChange((evento) => {
+      if (evento === 'PASSWORD_RECOVERY') {
+        enRecuperacion = true;
+        mostrarVista('nueva', { enfocar: true });
+      }
+    });
+
+    vistaSegunHash({ enfocar: false });
+    for (const boton of document.querySelectorAll('[data-mostrar]')) activarMostrarContrasena(boton);
+
+    // ---- Si ya hay sesión (y no es una recuperación), ir directo al inicio del rol ----
+    if (!enRecuperacion) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: perfil } = await obtenerPerfil();
+        if (perfil?.activo) location.replace(destinoTrasIngresar(perfil, volver));
+      }
+    }
+
+    // ---- A-01: iniciar sesión ----
+    const formIngreso = document.getElementById('form-ingreso');
+    const resultadoIngreso = document.getElementById('resultado-ingreso');
+    formIngreso.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      resultadoIngreso.replaceChildren();
+      const valido = validarFormulario(formIngreso, {
+        correo: validarCorreo,
+        contrasena: requerido('Escribe tu contraseña.'),
+      });
+      if (!valido) return;
+
+      await conBotonOcupado(formIngreso, 'Ingresando…', async () => {
+        const { error, destino } = await iniciarSesion({
+          correo: formIngreso.elements.correo.value,
+          contrasena: formIngreso.elements.contrasena.value,
+          volver,
+        });
+        if (error) {
+          mostrarError(resultadoIngreso, error);
+          formIngreso.elements.contrasena.value = '';
+          formIngreso.elements.contrasena.focus();
+          return;
+        }
+        location.assign(destino);
+      });
+    });
+
+    // ---- A-03 paso 1: enviar instrucciones ----
+    const formRecuperar = document.getElementById('form-recuperar');
+    const resultadoRecuperar = document.getElementById('resultado-recuperar');
+    formRecuperar.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      resultadoRecuperar.replaceChildren();
+      if (!validarFormulario(formRecuperar, { correo: validarCorreo })) return;
+
+      await conBotonOcupado(formRecuperar, 'Enviando…', async () => {
+        const { error } = await enviarRecuperacion(formRecuperar.elements.correo.value);
+        // Solo se muestra un error si es de red o de límite de intentos. Para todo lo
+        // demás el mensaje es el mismo exista o no el correo (evita revelar cuentas).
+        if (error && ['SIN_CONEXION', 'DEMASIADOS_INTENTOS'].includes(codigoDeError(error))) {
+          mostrarError(resultadoRecuperar, error);
+          return;
+        }
+        mostrarExito(resultadoRecuperar,
+          'Si el correo está registrado, recibirás un enlace en unos minutos. Revisa también la carpeta de spam.',
+          { titulo: 'Revisa tu correo', enfocar: true });
+        formRecuperar.reset();
+      });
+    });
+
+    // ---- A-03 paso 2: guardar la contraseña nueva ----
+    const formNueva = document.getElementById('form-nueva');
+    const resultadoNueva = document.getElementById('resultado-nueva');
+    formNueva.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      resultadoNueva.replaceChildren();
+      const valido = validarFormulario(formNueva, {
+        contrasena: validarContrasena,
+        repetir: coincideCon('contrasena'),
+      });
+      if (!valido) return;
+
+      await conBotonOcupado(formNueva, 'Guardando…', async () => {
+        const { error } = await cambiarContrasena(formNueva.elements.contrasena.value);
+        if (error) {
+          mostrarError(resultadoNueva, error);
+          return;
+        }
+        const { data: perfil, error: errorPerfil } = await obtenerPerfil();
+        if (errorPerfil) {
+          mostrarError(resultadoNueva, errorPerfil);
+          return;
+        }
+        location.assign(destinoTrasIngresar(perfil, null));
+      });
+    });
+  </script>
+</body>
+</html>

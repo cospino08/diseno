@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear cuenta · Clínica San Rafael</title>
+  <meta name="description" content="Crea tu cuenta de paciente para reservar citas médicas.">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/componentes.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="index.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor contenedor--estrecho" tabindex="-1">
+    <h1>Crear cuenta de paciente</h1>
+    <p class="texto-suave">
+      Solo pedimos los datos necesarios para agendar. No escribas información clínica.
+    </p>
+
+    <div id="resultado-registro"></div>
+    <!-- No hay selector de rol a propósito: todo registro crea un paciente. El rol
+         lo asigna la base de datos (trigger tg_crear_perfil, plan P4), no este formulario. -->
+    <form id="form-registro" class="formulario" novalidate>
+      <div class="campo">
+        <label for="registro-nombres">Nombres y apellidos</label>
+        <input class="control" id="registro-nombres" name="nombres" type="text"
+               autocomplete="name" maxlength="100" required aria-describedby="registro-nombres-error">
+        <p id="registro-nombres-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="registro-correo">Correo electrónico</label>
+        <input class="control" id="registro-correo" name="correo" type="email"
+               autocomplete="email" required aria-describedby="registro-correo-error">
+        <p id="registro-correo-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="registro-contrasena">Contraseña</label>
+        <div class="control-con-boton">
+          <input class="control" id="registro-contrasena" name="contrasena" type="password"
+                 autocomplete="new-password" required
+                 aria-describedby="registro-contrasena-ayuda registro-contrasena-error">
+          <button class="boton boton--enlace" type="button" data-mostrar="registro-contrasena"
+                  aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+        </div>
+        <p id="registro-contrasena-ayuda" class="campo__ayuda">Mínimo 8 caracteres, con letras y números.</p>
+        <p id="registro-contrasena-error" class="campo__error" hidden></p>
+      </div>
+      <div class="campo">
+        <label for="registro-repetir">Repite la contraseña</label>
+        <input class="control" id="registro-repetir" name="repetir" type="password"
+               autocomplete="new-password" required aria-describedby="registro-repetir-error">
+        <p id="registro-repetir-error" class="campo__error" hidden></p>
+      </div>
+      <button class="boton boton--primario boton--bloque" type="submit">Crear cuenta</button>
+    </form>
+    <p>¿Ya tienes cuenta? <a href="index.html">Inicia sesión</a></p>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico de Análisis y Diseño de Software. Clínica ficticia: no ingreses datos reales.</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    // Lógica de A-02. Todo texto dinámico entra con textContent (vía estados.js).
+    import { registrar, urlDe } from './assets/js/auth.js';
+    import {
+      validarFormulario, activarValidacionAlSalir, validarNombres, validarCorreo,
+      validarContrasena, coincideCon, normalizarEspacios,
+    } from './assets/js/validacion.js';
+    import { mostrarError, mostrarExito } from './assets/js/ui/estados.js';
+    import { activarMostrarContrasena, conBotonOcupado } from './assets/js/ui/formularios.js';
+
+    const formulario = document.getElementById('form-registro');
+    const resultado = document.getElementById('resultado-registro');
+    const reglas = {
+      nombres: validarNombres,
+      correo: validarCorreo,
+      contrasena: validarContrasena,
+      repetir: coincideCon('contrasena'),
+    };
+
+    activarMostrarContrasena(formulario.querySelector('[data-mostrar]'));
+    activarValidacionAlSalir(formulario, reglas);
+
+    formulario.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      resultado.replaceChildren();
+      if (!validarFormulario(formulario, reglas)) return;
+
+      await conBotonOcupado(formulario, 'Creando cuenta…', async () => {
+        const { error, requiereConfirmacion } = await registrar({
+          nombres: normalizarEspacios(formulario.elements.nombres.value),
+          correo: formulario.elements.correo.value,
+          contrasena: formulario.elements.contrasena.value,
+        });
+        if (error) {
+          mostrarError(resultado, error);
+          resultado.querySelector('[role="alert"]')?.scrollIntoView({ block: 'nearest' });
+          return;
+        }
+        if (requiereConfirmacion) {
+          // Se reemplaza el formulario por el estado de éxito y el foco va al mensaje.
+          formulario.hidden = true;
+          mostrarExito(resultado,
+            'Te enviamos un correo con un enlace para activar tu cuenta. Después de activarla, inicia sesión y completa tu perfil.',
+            { titulo: 'Revisa tu correo', enfocar: true });
+          return;
+        }
+        // Sin confirmación de correo ya hay sesión: se completa el perfil (P-05).
+        location.assign(urlDe('paciente/perfil.html?completar=1'));
+      });
+    });
+  </script>
+</body>
+</html>
