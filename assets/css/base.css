@@ -125,6 +125,12 @@ h3 {
   margin-top: var(--esp-6);
 }
 
+/* Lo mismo cuando el h2 va dentro de un <section> (su primer hijo): el aire lo
+   pone la sección. */
+* + section {
+  margin-top: var(--esp-6);
+}
+
 h1 { font-size: var(--texto-h1); }
 h2 { font-size: var(--texto-h2); }
 h3 { font-size: var(--texto-h3); }
