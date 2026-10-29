@@ -10,7 +10,8 @@ Dueño: P2. Reconstruyen la base de datos completa en un proyecto Supabase vací
 | 1 | `esquema.sql` | Tipos, tablas, restricciones, índices y triggers. |
 | 2 | `politicas_rls.sql` | Permisos, RLS en todas las tablas y funciones RPC. **Ejecutarlo siempre justo después del paso 1**: sin él, las tablas quedan expuestas con los permisos por defecto de Supabase. |
 | 3 | `datos_prueba.sql` | Datos ficticios (más de 500 citas) y nombramiento del **primer admin** (sección 2 del archivo). |
-| 4 | `pruebas_seguridad.sql` | Pruebas CP-02, 03, 04, 06, 09, 13 (y 07, 10, 11, 12). No deja cambios. Todas deben decir PASA. |
+| 3b | `datos_pruebas_especiales.sql` | *(Opcional, para CP-17 y CP-18.)* Paciente ficticio con nombre `<img src=x onerror=alert(1)>` y un "día de carga" con 500 citas de la Dra. Gómez, 90 días en el futuro. Se puede ejecutar sobre una base ya cargada y no duplica nada si se repite. |
+| 4 | `pruebas_seguridad.sql` | Pruebas CP-02, 03, 04, 06, 09, 13, 19, 23 (y 07, 10, 11, 12, 21). No deja cambios. Todas deben decir PASA (72 comprobaciones). |
 
 Cada archivo corre en una transacción: si falla, no queda nada a medias.
 

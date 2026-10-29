@@ -1,4 +1,4 @@
-# Pruebas de seguridad (CP-02, CP-03, CP-04, CP-06, CP-09, CP-13)
+# Pruebas de seguridad (CP-02, CP-03, CP-04, CP-06, CP-09, CP-13, CP-19, CP-23)
 
 Dueño: P2. Hay dos formas de ejecutarlas y conviene hacer **las dos** para la evidencia:
 
@@ -46,11 +46,38 @@ done
 `sql/local/` simula lo mínimo de Supabase (roles `anon`/`authenticated`, `auth.users`,
 `auth.uid()`). **No se ejecuta en Supabase.**
 
-### Resultado de la ejecución local (28/10/2026)
+### Resultados
 
-PostgreSQL 15.19 en Docker, base vacía: los 4 scripts corrieron sin errores, y
-`pruebas_seguridad.sql` dio **62 de 62 comprobaciones PASA**. También se probó el ciclo
-`reiniciar.sql → esquema → políticas → datos → pruebas` (62/62).
+| Fecha | Dónde | Resultado |
+| --- | --- | --- |
+| 28/10/2026 | PostgreSQL 15.19 local (Docker), base vacía | 62/62 PASA. Ciclo `reiniciar → esquema → políticas → datos → pruebas` también 62/62. |
+| 28/10/2026 | **Supabase (proyecto real)**, ejecutado por el coordinador | 62/62 PASA. |
+| 29/10/2026 | PostgreSQL 15.19 local, con CP-19 y CP-23 añadidos y `datos_pruebas_especiales.sql` cargado | **72/72 PASA**, dos ejecuciones seguidas sin dejar cambios. |
+
+**Pendiente:** volver a ejecutar en Supabase la versión de 72 comprobaciones.
+
+### Verificación a través de la API (PostgREST)
+
+El 29/10/2026 se levantó en local PostgREST v12.2.3 (la API REST que usa Supabase) sobre la
+misma base y se llamó por HTTP con JWT de cada usuario, como lo hace `supabase-js`:
+
+| Petición | Resultado |
+| --- | --- |
+| Paciente: `GET /appointments?select=id,franja:schedules(...),profesional:professionals(...)` | 200, solo sus 4 citas, embebidos sin ambigüedad |
+| Paciente: `POST /rpc/reservar_cita` con franja inexistente | 400, `{"code":"P0001","message":"FRANJA_NO_EXISTE","details":"..."}` |
+| Paciente: `PATCH /profiles` con `{"rol":"admin"}` | 403, `code 42501` |
+| Paciente: `POST /status_history` (CP-23) | 403, `code 42501` |
+| Paciente: `PATCH /profiles` con documento de otro | 409, `code 23505`, mensaje con `uq_profiles_documento` |
+| Sin sesión: `POST /rpc/franjas_disponibles`, `GET /appointments` | 401, `code 42501` |
+| Admin: `POST /rpc/indicadores_citas` | 200, JSON con `total`, `por_estado`, `por_especialidad`, `por_periodo` |
+
+### CP-17: rendimiento de la agenda
+
+Con `datos_pruebas_especiales.sql`, la Dra. Gómez (profesional1) tiene un día con 500 citas
+(fecha = hoy + 90 días; el script la muestra al terminar). En la base local,
+`mi_agenda` para ese día devolvió las 500 filas en **7 ms** (`explain analyze`). La medición
+de CP-17 (≤ 3 s, promedio de 3) la hace P4 en el navegador, porque incluye la red y el
+dibujado de la tabla.
 
 ### CP-02 con concurrencia real (dos sesiones a la vez)
 
@@ -167,6 +194,34 @@ const idCita   = r1.data ?? r2.data;
 console.log(await ganador.rpc('cancelar_cita', { p_cita_id: idCita }));          // esperado: sin error
 console.log(await perdedor.rpc('reservar_cita', { p_schedule_id: franja }));     // esperado: data = nuevo id
 // Limpieza: cancelar también esa cita para dejar la franja libre.
+```
+
+### CP-23: historial automático y escritura directa
+
+```js
+// Usar una sesión de profesional1 (crearla con sesion('profesional1@demo.test')).
+const pro1 = await sesion('profesional1@demo.test');
+const { data: agenda } = await pro1.rpc('mi_agenda', { p_desde: '2026-11-02', p_hasta: '2026-11-06' });
+const cita = agenda.find(c => c.estado === 'programada');
+console.log(await pro1.rpc('cambiar_estado_cita', { p_cita_id: cita.cita_id, p_estado: 'confirmada' }));
+console.log(await pro1.from('status_history').select('*').eq('appointment_id', cita.cita_id));
+//   esperado: una fila programada → confirmada con changed_by = id de profesional1
+console.log(await p1.from('status_history').insert({ appointment_id: cita.cita_id, estado_nuevo: 'atendida' }));
+//   esperado: error.code = '42501'
+```
+
+### CP-19: registro con rol falso
+
+Se prueba en la página de registro (P3) o en la consola con un correo nuevo, por ejemplo
+`nuevo1@demo.test` (requiere que en Supabase la confirmación de correo esté desactivada o
+que el usuario se confirme desde el panel):
+
+```js
+const { data } = await anon.auth.signUp({ email: 'nuevo1@demo.test', password: prompt('Contraseña nueva'),
+  options: { data: { nombres: 'Nuevo Uno', rol: 'admin' } } });
+// Iniciar sesión con esa cuenta y comprobar:
+// await nuevo.rpc('rol_actual')                         → 'paciente'
+// await nuevo.rpc('reservar_cita', { p_schedule_id })   → 'PERFIL_INCOMPLETO' (CP-21)
 ```
 
 ### CP-13: sin sesión

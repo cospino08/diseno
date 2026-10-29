@@ -27,6 +27,8 @@
 --   CP-06  Un paciente intenta volverse admin.
 --   CP-09  Cancelar y volver a reservar la misma franja.
 --   CP-13  Usuario sin sesión (anon) llama RPC y lee tablas.
+--   CP-19  Registro enviando rol 'admin' en los metadatos (incluye CP-21 en la base).
+--   CP-23  Historial automático e intento de escribirlo directamente.
 -- Complementarias (reglas de negocio en la base; sus dueños las prueban además
 -- desde la interfaz): CP-07, CP-10, CP-11, CP-12.
 --
@@ -157,6 +159,48 @@ language sql as $$
 $$;
 
 grant execute on all functions in schema pg_temp to authenticated, anon;
+
+
+-- CP-19. Registro enviando rol: 'admin' en los metadatos (RF-01) ----------------
+-- Supabase Auth, al hacer signUp(), inserta en auth.users los metadatos que
+-- manda el navegador. Aquí se simula ese INSERT (como postgres, igual que Auth)
+-- con un usuario nuevo que intenta registrarse como admin. Se deshace al final.
+do $$
+declare
+  v jsonb := '[]';
+  v_id uuid := gen_random_uuid();
+begin
+  begin
+    insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
+                            created_at, updated_at, confirmation_token, recovery_token,
+                            email_change_token_new, email_change)
+    values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated',
+            'nuevo.cp19@demo.test', '{"provider":"email","providers":["email"]}',
+            '{"nombres": "Nuevo CP-19", "rol": "admin"}', now(), now(), '', '', '', '');
+
+    v := pg_temp.r(v, 'CP-19', 'registro con {"rol": "admin"} en metadatos: el perfil queda paciente', 'paciente',
+           (select rol::text from public.profiles where id = v_id));
+
+    v := pg_temp.r(v, 'CP-19', 'el nombre sí se toma de los metadatos', 'Nuevo CP-19',
+           (select nombres from public.profiles where id = v_id));
+
+    -- Ahora como ese usuario recién registrado, con sesión (CP-21 a nivel de base).
+    perform set_config('pruebas.uid_nuevo', v_id::text, true);
+    execute 'set local role authenticated';
+    perform pg_temp.como('nuevo');
+
+    v := pg_temp.r(v, 'CP-19', 'el usuario nuevo tiene rol_actual() = paciente', 'paciente',
+           (select public.rol_actual()::text));
+
+    v := pg_temp.r(v, 'CP-19', 'con perfil incompleto no puede reservar (CP-21)', 'PERFIL_INCOMPLETO',
+           pg_temp.intentar(format('select public.reservar_cita(%s)', pg_temp.dato('franja_libre'))));
+
+    raise exception 'DESHACER' using errcode = 'P0099';   -- deshace el usuario y el "set role"
+  exception when sqlstate 'P0099' then null;
+  end;
+  perform pg_temp.guardar(v);
+end
+$$;
 
 
 -- -----------------------------------------------------------------------------
@@ -386,6 +430,50 @@ begin
            pg_temp.contar(format('select count(*) from public.appointments where schedule_id = %s', v_franja)));
 
     v := pg_temp.r(v, 'CP-09', 'historial de la cita cancelada: creación + cancelación', '2',
+           pg_temp.contar(format('select count(*) from public.status_history where appointment_id = %s', v_cita)));
+
+    raise exception 'DESHACER' using errcode = 'P0099';
+  exception when sqlstate 'P0099' then null;
+  end;
+  perform pg_temp.guardar(v);
+end
+$$;
+
+
+-- CP-23. Historial automático e intento de escribirlo directamente (RF-13) -------
+do $$
+declare
+  v jsonb := '[]';
+  v_cita text := pg_temp.dato('cita_paciente2');
+begin
+  begin
+    perform pg_temp.como('profesional1');
+    perform public.cambiar_estado_cita(v_cita::bigint, 'confirmada');
+
+    v := pg_temp.r(v, 'CP-23', 'al confirmar, el historial guarda programada→confirmada y changed_by = profesional1', '1',
+           pg_temp.contar(format(
+             'select count(*) from public.status_history where appointment_id = %s and estado_anterior = ''programada'' and estado_nuevo = ''confirmada'' and changed_by = %L',
+             v_cita, pg_temp.dato('uid_profesional1'))));
+
+    v := pg_temp.r(v, 'CP-23', 'profesional1 hace UPDATE del historial', '42501',
+           pg_temp.intentar(format('update public.status_history set changed_by = null where appointment_id = %s', v_cita)));
+
+    v := pg_temp.r(v, 'CP-23', 'profesional1 hace DELETE del historial', '42501',
+           pg_temp.intentar(format('delete from public.status_history where appointment_id = %s', v_cita)));
+
+    perform pg_temp.como('paciente1');
+    v := pg_temp.r(v, 'CP-23', 'paciente1 inserta una fila en status_history', '42501',
+           pg_temp.intentar(format(
+             'insert into public.status_history (appointment_id, estado_anterior, estado_nuevo) values (%s, ''confirmada'', ''atendida'')',
+             v_cita)));
+
+    perform pg_temp.como('admin');
+    v := pg_temp.r(v, 'CP-23', 'ni el admin inserta en status_history', '42501',
+           pg_temp.intentar(format(
+             'insert into public.status_history (appointment_id, estado_nuevo) values (%s, ''atendida'')', v_cita)));
+
+    perform pg_temp.como('paciente2');
+    v := pg_temp.r(v, 'CP-23', 'control positivo: paciente2 ve el historial de su cita', '2',
            pg_temp.contar(format('select count(*) from public.status_history where appointment_id = %s', v_cita)));
 
     raise exception 'DESHACER' using errcode = 'P0099';
