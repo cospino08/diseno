@@ -10,6 +10,13 @@ Configuración lista en `assets/js/config.js` (exporta `SUPABASE_URL` y `SUPABAS
 clave publishable). **P4:** impórtala desde `assets/js/datos/cliente.js` y **no** pongas `config.js`
 en `.gitignore`: GitHub Pages la necesita publicada. Nadie usa la `service_role`.
 
+**Base de datos en Supabase (28/10/2026, coordinación):** ejecutados en el proyecto real, en orden,
+`esquema.sql`, `politicas_rls.sql` y `datos_prueba.sql`, sin errores. `pruebas_seguridad.sql` da
+**62/62 PASA en Supabase**. Las 5 cuentas demo existen y ya se puede iniciar sesión con ellas
+(las contraseñas las tiene el coordinador, fuera del repo). El analizador de seguridad de Supabase
+solo advierte que las RPC son ejecutables por `authenticated`, lo cual es intencional: cada una
+valida el rol por dentro. **P3 y P4: ya pueden probar contra la base real.**
+
 ---
 
 ## P1: Análisis y documentación
