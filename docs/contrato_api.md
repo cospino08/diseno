@@ -7,7 +7,7 @@ Este documento es la **única fuente de verdad** sobre nombres de tablas, column
 RPC, parámetros y códigos de error. Si el frontend necesita algo distinto, se pide a P2 en
 `docs/ESTADO.md` (sección "Pedidos para P2"); P2 decide y actualiza este archivo.
 
-Versión: **1.0** (28/10/2026). Implementación: `sql/esquema.sql` y `sql/politicas_rls.sql`.
+Versión: **1.1** (28/10/2026). Implementación: `sql/esquema.sql` y `sql/politicas_rls.sql`.
 
 ---
 
@@ -293,7 +293,8 @@ especialidades activos, ordenadas por fecha y hora. No expone datos de otros pac
 | `specialty_id` | bigint |
 | `especialidad` | text |
 
-Errores: ninguno propio (lista vacía si no hay disponibilidad).
+Errores: ninguno propio. Devuelve lista vacía si no hay disponibilidad o si la cuenta de
+quien consulta está desactivada.
 
 ### 3.4 `reservar_cita(p_schedule_id, p_motivo)`
 
@@ -364,7 +365,8 @@ no revelar qué ID existen), `TRANSICION_INVALIDA` (ya está atendida, cancelada
 | `p_estado` | estado_cita (string) | — |
 | `p_observaciones` | text | `null` (si es `null` se conservan las anteriores; máximo 500) |
 
-No devuelve nada. El profesional solo puede cambiar citas asignadas a él.
+No devuelve nada. El profesional solo puede cambiar citas asignadas a él. Si `p_estado` es
+igual al estado actual, no hay transición: solo se guardan las observaciones.
 
 Errores: `NO_AUTORIZADO`, `TRANSICION_INVALIDA`, `ANTES_DE_HORA` (`atendida` o `no_asistio`
 antes de la hora de inicio), `DATOS_INVALIDOS`.
@@ -536,7 +538,8 @@ para el usuario en `assets/js/ui/mensajes.js`.
 
 | `error.code` | Significado | Ejemplo | Mensaje sugerido |
 | --- | --- | --- | --- |
-| `42501` | Permiso denegado (sin sesión, o escritura directa no permitida). | `anon` llama una RPC; un paciente hace `update` de `rol`. | "No tienes permiso para realizar esta acción." |
+| `42501` | Permiso denegado (sin sesión, escritura directa no permitida, o fila rechazada por RLS). | `anon` llama una RPC; un paciente hace `update` de `rol`. Según la versión de PostgREST, `anon` puede recibir HTTP `401` en lugar de `42501`. | "No tienes permiso para realizar esta acción." |
+| `23P01` | Dos admins crean a la vez franjas que se cruzan (caso raro; normalmente llega `HORARIO_SUPERPUESTO`). | insert en `schedules`. | Igual que `HORARIO_SUPERPUESTO`. |
 | `23505` | Valor duplicado. `error.message` incluye el nombre de la restricción: `uq_profiles_documento`, `uq_specialties_nombre`, `uq_professionals_registro`. | Documento ya registrado. | "Ya existe un registro con ese documento / nombre." |
 | `23514` | Falla una regla CHECK. El mensaje incluye el nombre: `ck_profiles_documento`, `ck_profiles_telefono`, `ck_profiles_fecha_nacimiento`, `ck_profiles_nombres`, `ck_specialties_nombre`, `ck_schedules_horas`… | Teléfono con letras. | "Revisa el formato del campo." |
 | `PGRST301` / `401` | Sesión expirada o JWT inválido. | Token vencido. | Redirigir al inicio de sesión (CP-14). |
@@ -582,4 +585,5 @@ para el usuario en `assets/js/ui/mensajes.js`.
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| 1.1 | 28/10/2026 | Tras implementar y probar el SQL: `cambiar_estado_cita` con el mismo estado solo guarda observaciones; `franjas_disponibles` devuelve vacío para cuentas desactivadas; se documentan `23P01` y el posible `401` para `anon`. Sin cambios de nombres ni firmas. |
 | 1.0 | 28/10/2026 | Versión inicial. Respecto a la sección 7 del plan, se añaden: `rol_actual`, `mis_citas`, `citas_admin`, `cambiar_activo_perfil`, `anonimizar_paciente`; los códigos `FRANJA_CON_CITA` y `DATOS_INVALIDOS`; la columna `cancelado_por` en `appointments` y `email` en `profiles`; `p_observaciones` en `cambiar_estado_cita` y `p_agrupacion` en `indicadores_citas`. |
