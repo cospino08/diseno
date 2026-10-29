@@ -1,0 +1,146 @@
+/* =============================================================================
+   responsive.css: ajustes para pantallas más anchas que 360 px.
+   Dueño: P3. Se carga después de base.css y componentes.css.
+
+   Estrategia mobile first: aquí solo hay media queries con min-width. Si una
+   regla se rompe a 360 px, el problema está en base.css o componentes.css, no
+   aquí. Puntos de quiebre:
+     600 px  teléfonos grandes en horizontal y tabletas pequeñas
+     768 px  tabletas: el menú deja de ser plegable y las tablas vuelven a ser tablas
+     1024 px escritorio: listas en dos columnas
+   ============================================================================= */
+
+@media (min-width: 600px) {
+  :root {
+    --texto-h1: 1.875rem;
+    --texto-h2: 1.375rem;
+  }
+
+  /* Los botones de acción se alinean en fila y dejan de ocupar todo el ancho. */
+  .acciones {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .acciones .boton--bloque {
+    width: auto;
+  }
+
+  /* Pares etiqueta/valor del resumen en dos columnas. */
+  .resumen > div {
+    grid-template-columns: 9rem 1fr;
+    align-items: baseline;
+  }
+
+  .resumen dt {
+    font-size: var(--texto-base);
+  }
+
+  /* El aviso flotante se ancla a la derecha con un ancho fijo. */
+  .avisos {
+    inset: auto var(--esp-5) var(--esp-5) auto;
+    width: 24rem;
+  }
+}
+
+@media (min-width: 768px) {
+  main {
+    padding-block: var(--esp-6);
+  }
+
+  /* El menú siempre visible, en fila dentro del encabezado. */
+  .js .menu__boton {
+    display: none;
+  }
+
+  .menu {
+    flex-basis: auto;
+  }
+
+  .menu__lista,
+  .js .menu__lista[data-abierto="false"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: auto;
+    padding: 0;
+  }
+
+  .menu__usuario {
+    padding: 0 var(--esp-2);
+    border-top: 0;
+    border-left: 1px solid var(--color-borde);
+  }
+
+  /* Formularios con dos campos por fila cuando se marcan como .formulario--doble. */
+  .formulario--doble {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .formulario--doble .campo--completo,
+  .formulario--doble .acciones {
+    grid-column: 1 / -1;
+  }
+
+  /* Las tablas vuelven a su formato normal. */
+  .tabla thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    display: table-header-group;
+  }
+
+  .tabla tr {
+    display: table-row;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .tabla th,
+  .tabla td {
+    display: table-cell;
+    padding: var(--esp-3);
+    text-align: left;
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .tabla th {
+    background: var(--neutro-fondo);
+    font-size: var(--texto-pequeno);
+  }
+
+  .tabla td::before {
+    content: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lista-tarjetas--doble {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Impresión: para imprimir el comprobante de una cita. */
+@media print {
+  .encabezado,
+  .pie,
+  .acciones,
+  .avisos,
+  .saltar-contenido {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .tarjeta {
+    box-shadow: none;
+    border-color: #000;
+  }
+}

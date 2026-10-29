@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guía de estilos · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/componentes.css">
+  <link rel="stylesheet" href="../../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!--
+    Guía de estilos: muestra todos los componentes de assets/css/ y los estados de
+    assets/js/ui/estados.js con datos FICTICIOS. Sirve de referencia para P4 y para
+    revisar el diseño a 360 px (CP-05). No es una pantalla del sistema.
+    Abrir con un servidor local (los módulos ES no cargan desde file://):
+      python3 -m http.server 8000   →   http://localhost:8000/docs/wireframes/guia_estilos.html
+  -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="#"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="#">Inicio</a></li>
+          <li><a class="menu__enlace" href="#botones" aria-current="page">Reservar cita</a></li>
+          <li><a class="menu__enlace" href="#">Mis citas</a></li>
+          <li><a class="menu__enlace" href="#">Mi perfil</a></li>
+          <li class="menu__usuario">
+            <span data-usuario>Ana Prueba · Paciente</span>
+            <button class="boton boton--enlace" type="button">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Guía de estilos</h1>
+    <p class="texto-suave">Componentes de <code>assets/css/</code> con datos ficticios.</p>
+
+    <h2 id="botones">Botones</h2>
+    <div class="acciones">
+      <button class="boton boton--primario" type="button">Primario</button>
+      <button class="boton boton--secundario" type="button">Secundario</button>
+      <button class="boton boton--peligro" type="button" id="abrir-dialogo">Peligro (abre diálogo)</button>
+      <button class="boton boton--enlace" type="button">Enlace</button>
+      <button class="boton boton--primario" type="button" disabled>Deshabilitado</button>
+    </div>
+
+    <h2>Formulario</h2>
+    <form class="formulario formulario--doble" novalidate onsubmit="return false">
+      <div class="campo">
+        <label for="g-documento">Documento de identidad <span class="campo__requerido" aria-hidden="true">*</span></label>
+        <input class="control" id="g-documento" name="documento" aria-invalid="true"
+               aria-describedby="g-documento-ayuda g-documento-error" value="12 34">
+        <p id="g-documento-ayuda" class="campo__ayuda">Letras, números o guion.</p>
+        <p id="g-documento-error" class="campo__error">El documento debe tener de 5 a 20 caracteres.</p>
+      </div>
+      <div class="campo">
+        <label for="g-especialidad">Especialidad</label>
+        <select class="control" id="g-especialidad"><option>Medicina general</option><option>Pediatría</option></select>
+      </div>
+      <div class="campo campo--completo">
+        <label for="g-motivo">Motivo de la consulta (opcional)</label>
+        <textarea class="control" id="g-motivo" maxlength="200" aria-describedby="g-motivo-ayuda"></textarea>
+        <p id="g-motivo-ayuda" class="campo__ayuda">No escribas diagnósticos ni datos clínicos.</p>
+      </div>
+    </form>
+
+    <h2>Alertas</h2>
+    <div id="zona-alertas"></div>
+
+    <h2>Estados de interfaz</h2>
+    <div class="lista-tarjetas lista-tarjetas--doble">
+      <div class="tarjeta" id="estado-cargando"></div>
+      <div class="tarjeta" id="estado-vacio"></div>
+      <div class="tarjeta" id="estado-error"></div>
+      <div class="tarjeta" id="estado-denegado"></div>
+      <div class="tarjeta" id="estado-exito"></div>
+    </div>
+
+    <h2>Etiquetas de estado de cita</h2>
+    <p id="zona-etiquetas"></p>
+
+    <h2>Tarjeta con franjas horarias</h2>
+    <article class="tarjeta">
+      <h3 class="tarjeta__titulo">Dra. Laura Prueba</h3>
+      <p class="tarjeta__meta">Medicina general</p>
+      <ul class="franjas">
+        <li><button class="franja" type="button" aria-label="Reservar 08:00 con Dra. Laura Prueba">08:00</button></li>
+        <li><button class="franja" type="button" aria-label="Reservar 08:30 con Dra. Laura Prueba">08:30</button></li>
+        <li><button class="franja" type="button" aria-label="Reservar 09:00 con Dra. Laura Prueba">09:00</button></li>
+        <li><button class="franja" type="button" aria-label="Reservar 10:30 con Dra. Laura Prueba">10:30</button></li>
+        <li><button class="franja" type="button" aria-label="Reservar 11:00 con Dra. Laura Prueba">11:00</button></li>
+      </ul>
+    </article>
+
+    <h2>Resumen (dl)</h2>
+    <dl class="resumen tarjeta">
+      <div><dt>Fecha</dt><dd>jue 29 oct 2026</dd></div>
+      <div><dt>Hora</dt><dd>08:30 – 09:00</dd></div>
+      <div><dt>Profesional</dt><dd>Dra. Laura Prueba</dd></div>
+    </dl>
+
+    <h2>Pestañas</h2>
+    <div class="pestanas" role="tablist" aria-label="Citas">
+      <button class="pestana" role="tab" type="button" aria-selected="true">Próximas</button>
+      <button class="pestana" role="tab" type="button" aria-selected="false" tabindex="-1">Historial</button>
+    </div>
+
+    <h2>Tabla (tarjetas en móvil)</h2>
+    <table class="tabla" role="table">
+      <thead role="rowgroup">
+        <tr role="row"><th role="columnheader">Hora</th><th role="columnheader">Paciente</th><th role="columnheader">Estado</th></tr>
+      </thead>
+      <tbody role="rowgroup" id="cuerpo-tabla"></tbody>
+    </table>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Guía de estilos · datos ficticios.</p></div>
+  </footer>
+
+  <script type="module">
+    import {
+      crearAlerta, mostrarCargando, mostrarVacio, mostrarError, mostrarAccesoDenegado, mostrarExito, avisar,
+    } from '../../assets/js/ui/estados.js';
+    import { nombreEstado } from '../../assets/js/ui/mensajes.js';
+    import { confirmar } from '../../assets/js/ui/dialogo.js';
+    import { prepararEncabezado } from '../../assets/js/auth.js';
+
+    prepararEncabezado(null);
+
+    const alertas = document.getElementById('zona-alertas');
+    alertas.append(
+      crearAlerta('info', 'Inicia sesión para continuar.'),
+      crearAlerta('exito', 'Perfil actualizado.'),
+      crearAlerta('aviso', 'Tu sesión expiró. Inicia sesión de nuevo.'),
+      crearAlerta('error', 'Otra persona acaba de reservar esa hora.', 'No se pudo reservar'),
+    );
+
+    mostrarCargando(document.getElementById('estado-cargando'), 'Buscando horas disponibles…');
+    mostrarVacio(document.getElementById('estado-vacio'), 'No hay horas disponibles para esa fecha.',
+      { texto: 'Ver el día siguiente', alPulsar: () => avisar('Acción de ejemplo', 'info') });
+    mostrarError(document.getElementById('estado-error'), { message: 'Failed to fetch' },
+      { reintentar: () => avisar('Reintentando (ejemplo)', 'info') });
+    mostrarAccesoDenegado(document.getElementById('estado-denegado'), { enlace: { texto: 'Ir a mi inicio', href: '#' } });
+    mostrarExito(document.getElementById('estado-exito'), 'Tu cita quedó registrada con estado Programada.', { titulo: '¡Cita reservada!' });
+
+    const etiquetas = document.getElementById('zona-etiquetas');
+    for (const estado of ['programada', 'confirmada', 'atendida', 'cancelada', 'no_asistio']) {
+      const span = document.createElement('span');
+      span.className = `etiqueta etiqueta--${estado}`;
+      span.textContent = nombreEstado(estado);
+      etiquetas.append(span, ' ');
+    }
+
+    // Fila con un nombre malicioso para comprobar que se muestra como texto (CP-18).
+    const filas = [
+      ['08:00', 'Ana Prueba', 'programada'],
+      ['08:30', '<img src=x onerror=alert(1)>', 'confirmada'],
+    ];
+    const cuerpo = document.getElementById('cuerpo-tabla');
+    for (const [hora, paciente, estado] of filas) {
+      const tr = document.createElement('tr');
+      tr.setAttribute('role', 'row');
+      for (const [etiqueta, valor] of [['Hora', hora], ['Paciente', paciente], ['Estado', nombreEstado(estado)]]) {
+        const td = document.createElement('td');
+        td.setAttribute('role', 'cell');
+        td.dataset.etiqueta = etiqueta;
+        td.textContent = valor;
+        tr.append(td);
+      }
+      cuerpo.append(tr);
+    }
+
+    document.getElementById('abrir-dialogo').addEventListener('click', async () => {
+      const ok = await confirmar({
+        titulo: '¿Cancelar esta cita?',
+        detalles: ['jue 29 oct 2026 · 08:30', 'Dra. Laura Prueba'],
+        mensaje: 'La hora quedará libre para otra persona.',
+        textoAceptar: 'Sí, cancelar',
+        textoCancelar: 'No, volver',
+        peligro: true,
+      });
+      avisar(ok ? 'Cita cancelada (ejemplo).' : 'No se canceló nada.', ok ? 'exito' : 'info');
+    });
+  </script>
+</body>
+</html>
