@@ -5,6 +5,9 @@ sesión. Para pedirle algo a otro agente, escríbelo en la sección **Pedidos** 
 
 Ronda actual: **1**
 
+Supabase Project URL: `https://oziwvgyddccfjxrcexnd.supabase.co`
+(la clave pública la pone el humano en `assets/js/config.js`; nadie usa la `service_role`)
+
 ---
 
 ## P1: Análisis y documentación
