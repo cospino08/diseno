@@ -3,11 +3,10 @@
 Proyecto integrador de **Análisis y Diseño de Software**: sistema web para reservar, consultar,
 cancelar y administrar citas médicas en una clínica ambulatoria ficticia.
 
-> **Estado:** en desarrollo (ronda 1). Ver [Estado de las funciones](#estado-de-las-funciones)
+> **Estado:** en desarrollo (ronda 2). Ver [Estado de las funciones](#estado-de-las-funciones)
 > para saber con honestidad qué está hecho y qué falta.
 
-**Aplicación publicada:** <https://cospino08.github.io/diseno/> _(pendiente de activar GitHub
-Pages; ver [Despliegue](#despliegue-en-github-pages))_
+**Aplicación publicada:** <https://cospino08.github.io/diseno/> (GitHub Pages, rama `main`).
 
 ## Descripción
 
@@ -74,29 +73,24 @@ No hay nada que compilar ni instalar.
 
 ## Cómo ejecutar los SQL
 
-Los scripts están en `sql/` (responsable: P2). Se ejecutan **en este orden** en el
-**SQL Editor** de Supabase (*SQL Editor > New query*, pegar el contenido y *Run*):
+Los scripts están en `sql/` (responsable: P2; detalle en [sql/README.md](sql/README.md)). Se
+ejecutan **en este orden** en el **SQL Editor** de Supabase (*SQL Editor > New query*, pegar el
+contenido y *Run*):
 
-| Orden | Script | Qué hace |
+| Paso | Script | Qué hace |
 | --- | --- | --- |
-| 1 | `sql/esquema.sql` | Tipos, tablas, restricciones, índices, triggers y funciones RPC. |
-| 2 | `sql/politicas_rls.sql` | Activa RLS en todas las tablas, crea las políticas y los permisos por columna. |
-| 3 | `sql/datos_prueba.sql` | Especialidades, profesionales, franjas y citas ficticias. |
+| 0 | *(manual)* | Crear las 5 cuentas demo en *Authentication > Users > Add user* con "Auto Confirm User". La contraseña no se escribe en el repositorio. |
+| 1 | `sql/esquema.sql` | Tipos, tablas, restricciones, índices y triggers. |
+| 2 | `sql/politicas_rls.sql` | Permisos, RLS en todas las tablas y funciones RPC. **Siempre justo después del paso 1.** |
+| 3 | `sql/datos_prueba.sql` | Datos ficticios (más de 500 citas) y nombramiento del primer admin. |
+| 4 | `sql/pruebas_seguridad.sql` | Pruebas de seguridad; no deja cambios. Todas deben decir PASA. |
 
 **Primer administrador.** Desde la página nadie puede volverse admin (el perfil siempre nace
-como `paciente`). El primer admin se asigna a mano una sola vez, en el SQL Editor, con el
-correo de una cuenta ya registrada:
+como `paciente`). `datos_prueba.sql` nombra admin a `admin@demo.test` desde el SQL Editor, que
+es el único lugar donde se puede hacer. A partir de ahí, ese admin promueve a los demás desde
+*Administración > Profesionales* (RPC `asignar_rol`).
 
-```sql
-update public.profiles set rol = 'admin'
-where id = (select id from auth.users where email = 'admin@demo.test');
-```
-
-A partir de ahí, ese admin promueve a los demás desde *Administración > Profesionales*
-(RPC `asignar_rol`). El script exacto lo documenta P2 en `sql/datos_prueba.sql`.
-
-Para comprobar que la base se reconstruye desde cero, se ejecutan los tres scripts en un
-proyecto de Supabase nuevo.
+Para reconstruir desde cero: `sql/reiniciar.sql` y luego los pasos 1 a 3.
 
 ## Credenciales de demostración
 
@@ -105,8 +99,8 @@ Cuentas **ficticias** creadas solo para probar el sistema. No contienen datos re
 | Rol | Correo | Contraseña |
 | --- | --- | --- |
 | Administrador | `admin@demo.test` | _la entrega el equipo al docente_ |
-| Profesional | `profesional1@demo.test` | _la entrega el equipo al docente_ |
-| Paciente | `paciente1@demo.test` | _la entrega el equipo al docente_ |
+| Profesional | `profesional1@demo.test`, `profesional2@demo.test` | _la entrega el equipo al docente_ |
+| Paciente | `paciente1@demo.test`, `paciente2@demo.test` | _la entrega el equipo al docente_ |
 
 > Las contraseñas no se escriben en el repositorio. Las define la persona que crea las
 > cuentas en Supabase y se entregan al docente junto con la URL.
@@ -136,8 +130,9 @@ Notas:
 /
 ├── index.html, registro.html  (P3) acceso
 ├── paciente/                  (P3) vistas del paciente
-├── profesional/               (P4) agenda y detalle de cita
-├── admin/                     (P4) resumen, catálogos, horarios, citas e indicadores
+├── profesional/               (P4) agenda.html, cita.html (también la usa el admin)
+├── admin/                     (P4) resumen, especialidades, profesionales, horarios, citas,
+│                                   pacientes, indicadores y componentes.js (piezas comunes)
 ├── assets/
 │   ├── css/                   (P3) estilos
 │   └── js/
@@ -157,23 +152,44 @@ Las carpetas vacías llevan un `.gitkeep` para que Git las conserve hasta que te
 
 | Módulo | Contenido |
 | --- | --- |
-| `cliente.js` | Cliente único de Supabase. |
-| `respuesta.js` | Convierte cualquier error en `{ codigo, detalle }` con el código del contrato. |
-| `citas.js` | Franjas disponibles, reservar, cancelar, mis citas, agenda, cambio de estado, detalle, historial y transiciones válidas. |
-| `catalogos.js` | Especialidades, profesionales y franjas (listar, editar, activar o desactivar, generar). |
-| `perfiles.js` | Perfil propio, lista de perfiles (admin) y `asignarRol`. |
-| `indicadores.js` | Conteos agregados de citas (admin). |
+Programada contra [docs/contrato_api.md](docs/contrato_api.md) v1.2.
 
-Todas las funciones devuelven `{ data, error }` y nunca lanzan excepciones:
+| Módulo | Contenido |
+| --- | --- |
+| `cliente.js` | Cliente único de Supabase. |
+| `respuesta.js` | Normaliza cualquier error: conserva `message`, `code` y `details` de Supabase y agrega `codigo` con el catálogo de `ui/mensajes.js` (P3). |
+| `citas.js` | `franjasDisponibles`, `reservarCita`, `misCitas`, `cancelarCita`, `miAgenda`, `cambiarEstadoCita`, `obtenerDetalleCita`, `historialCita`, `transicionesValidas`, `citasAdmin`. |
+| `catalogos.js` | Especialidades, profesionales y franjas: listar, crear, editar, activar o desactivar, `generarFranjas`, `citaActivaDe`. |
+| `perfiles.js` | `actualizarPerfil`, `listarPerfiles`, `asignarRol`, `cambiarActivoPerfil`, `anonimizarPaciente`. |
+| `indicadores.js` | `indicadoresCitas(desde, hasta, agrupacion)`: conteos por estado, especialidad y periodo. |
+
+Todas las funciones devuelven `{ data, error }` y nunca lanzan excepciones. El `error` se
+puede pasar tal cual a `mostrarError()` de `ui/estados.js`:
 
 ```js
 import { cambiarEstadoCita } from '../assets/js/datos/citas.js';
+import { mostrarError } from '../assets/js/ui/estados.js';
 
 const { error } = await cambiarEstadoCita(idCita, 'confirmada');
 if (error) {
-  // error.codigo: 'NO_AUTORIZADO', 'ANTES_DE_HORA', 'TRANSICION_INVALIDA', 'ERROR_RED'...
+  // error.codigo: 'NO_AUTORIZADO', 'ANTES_DE_HORA', 'TRANSICION_INVALIDA', 'SIN_CONEXION'...
+  mostrarError(zona, error);
 }
 ```
+
+### Pantallas del profesional y del administrador (P4)
+
+| Pantalla | Archivo | Llamadas principales |
+| --- | --- | --- |
+| Agenda propia | `profesional/agenda.html` | `mi_agenda` |
+| Detalle y cambio de estado | `profesional/cita.html?id=` | `transiciones_validas`, `status_history`, `cambiar_estado_cita`, `cancelar_cita` |
+| Resumen | `admin/resumen.html` | `indicadores_citas` |
+| Especialidades | `admin/especialidades.html` | `specialties` (select, insert, update) |
+| Profesionales | `admin/profesionales.html` | `professionals`, `profiles`, `asignar_rol` |
+| Horarios | `admin/horarios.html` | `generar_franjas`, `schedules` (select, update) |
+| Citas | `admin/citas.html` | `citas_admin` (detalle en `profesional/cita.html`) |
+| Pacientes | `admin/pacientes.html` | `profiles`, `cambiar_activo_perfil`, `anonimizar_paciente` |
+| Indicadores | `admin/indicadores.html` | `indicadores_citas` |
 
 ## Decisiones técnicas
 
@@ -207,14 +223,26 @@ Se actualiza al final de cada ronda. Lo que no esté marcado como hecho **no fun
 | Función | Estado |
 | --- | --- |
 | Estructura del repositorio, cliente de Supabase, `.gitignore` | Hecho |
-| Capa de acceso a datos (`assets/js/datos/`) | Hecha contra la sección 7 del plan; **pendiente de ajustar** a `docs/contrato_api.md` y de probar contra la base real |
+| Capa de acceso a datos (`assets/js/datos/`) | Hecha contra el contrato v1.2 y probada contra una réplica local de la base |
 | Diagrama de arquitectura | Hecho |
-| Esquema SQL, RLS, RPC y datos de prueba | Pendiente (P2) |
-| Registro, inicio de sesión, perfil y vistas del paciente | Pendiente (P3) |
-| Panel del profesional (agenda, detalle, cambio de estado) | Pendiente (P4, ronda 2) |
-| Panel administrativo e indicadores | Pendiente (P4, ronda 2) |
-| Publicación en GitHub Pages | Pendiente de activar |
-| Pruebas CP-01 a CP-18 | Pendientes |
+| Esquema SQL, RLS, RPC y datos de prueba (P2) | Hecho y cargado en Supabase (62/62 pruebas de seguridad PASA) |
+| Registro, inicio de sesión y recuperación (P3) | Hecho |
+| Vistas del paciente: buscar, reservar, mis citas, perfil (P3) | **Pendiente** (ronda 2) |
+| Panel del profesional (agenda, detalle, cambio de estado) | Hecho; probado en réplica local, **falta probarlo en Supabase** |
+| Panel administrativo (resumen, especialidades, profesionales, horarios, citas, pacientes, indicadores) | Hecho; probado en réplica local, **falta probarlo en Supabase** |
+| Publicación en GitHub Pages | Activa |
+| Pruebas de P4 (CP-10, 11, 12, 15, 17, 22, 24, 25, 27) | Aprobadas en réplica local; repetir en la URL publicada |
+
+**Limitaciones conocidas:**
+
+- Las pruebas de P4 se ejecutaron con PostgreSQL y PostgREST locales (las mismas versiones y
+  scripts de Supabase) porque las contraseñas demo no se comparten con los agentes. Falta
+  repetirlas en la URL publicada.
+- La agenda del profesional muestra solo citas, no las franjas libres del día.
+- Las observaciones administrativas de una cita se pueden reemplazar, pero no borrar: la RPC
+  conserva las anteriores cuando recibe un texto vacío.
+- Para dar de alta a un profesional, la persona debe registrarse primero: crear cuentas ajenas
+  exigiría la `service_role`, prohibida en el navegador.
 
 **Fuera del MVP** (decisión del equipo): notificaciones por correo o SMS, horarios
 recurrentes, varias sedes, pagos, telemedicina y lista de espera.
