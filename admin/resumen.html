@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen · Administración · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- D-01 Resumen (docs/wireframes/profesional_admin.md). Responsable: P4.
+       El encabezado y el menú se repiten igual en las 7 páginas de admin/. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="resumen.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Administración">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="resumen.html">Resumen</a></li>
+          <li><a class="menu__enlace" href="especialidades.html">Especialidades</a></li>
+          <li><a class="menu__enlace" href="profesionales.html">Profesionales</a></li>
+          <li><a class="menu__enlace" href="horarios.html">Horarios</a></li>
+          <li><a class="menu__enlace" href="citas.html">Citas</a></li>
+          <li><a class="menu__enlace" href="pacientes.html">Pacientes</a></li>
+          <li><a class="menu__enlace" href="indicadores.html">Indicadores</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Resumen</h1>
+    <p id="fecha-hoy" class="texto-suave"></p>
+
+    <section aria-labelledby="titulo-hoy">
+      <h2 id="titulo-hoy">Citas de hoy</h2>
+      <div id="zona-hoy"></div>
+    </section>
+
+    <section aria-labelledby="titulo-semana">
+      <h2 id="titulo-semana">Próximos 7 días</h2>
+      <div id="zona-semana"></div>
+    </section>
+
+    <section aria-labelledby="titulo-accesos">
+      <h2 id="titulo-accesos">Gestión</h2>
+      <ul class="lista-tarjetas lista-tarjetas--doble">
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="especialidades.html">Especialidades</a></h3>
+          <p class="tarjeta__meta">Crear, editar, activar o desactivar.</p>
+        </li>
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="profesionales.html">Profesionales</a></h3>
+          <p class="tarjeta__meta">Promover usuarios registrados y gestionar profesionales.</p>
+        </li>
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="horarios.html">Horarios</a></h3>
+          <p class="tarjeta__meta">Generar franjas y activarlas o desactivarlas.</p>
+        </li>
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="citas.html">Citas</a></h3>
+          <p class="tarjeta__meta">Consultar, cambiar estado o cancelar.</p>
+        </li>
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="pacientes.html">Pacientes</a></h3>
+          <p class="tarjeta__meta">Activar, desactivar o anonimizar cuentas.</p>
+        </li>
+        <li class="tarjeta">
+          <h3 class="tarjeta__titulo"><a href="indicadores.html">Indicadores</a></h3>
+          <p class="tarjeta__meta">Citas por estado, especialidad y periodo.</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="resumen.js"></script>
+</body>
+</html>

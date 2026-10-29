@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profesionales · Administración · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- D-03 Profesionales (docs/wireframes/profesional_admin.md). Responsable: P4.
+       El encabezado y el menú se repiten igual en las 7 páginas de admin/. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="resumen.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Administración">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="resumen.html">Resumen</a></li>
+          <li><a class="menu__enlace" href="especialidades.html">Especialidades</a></li>
+          <li><a class="menu__enlace" href="profesionales.html">Profesionales</a></li>
+          <li><a class="menu__enlace" href="horarios.html">Horarios</a></li>
+          <li><a class="menu__enlace" href="citas.html">Citas</a></li>
+          <li><a class="menu__enlace" href="pacientes.html">Pacientes</a></li>
+          <li><a class="menu__enlace" href="indicadores.html">Indicadores</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Profesionales</h1>
+
+    <section aria-labelledby="titulo-lista">
+      <h2 id="titulo-lista">Profesionales registrados</h2>
+      <p class="texto-suave">Un profesional desactivado deja de aparecer para los pacientes. No se borra.</p>
+      <div id="zona-lista"></div>
+    </section>
+
+    <section aria-labelledby="titulo-promover">
+      <h2 id="titulo-promover">Dar de alta o cambiar el rol de un usuario</h2>
+      <p class="texto-suave">
+        La persona primero se registra en el sistema como cualquier paciente. Después la buscas aquí
+        y le asignas el rol. Por seguridad, las cuentas no se crean desde esta página.
+      </p>
+      <form id="form-buscar" class="formulario formulario--doble" novalidate>
+        <div class="campo">
+          <label for="busqueda">Nombre, documento o correo</label>
+          <input class="control" id="busqueda" name="busqueda" type="search" maxlength="80"
+                 aria-describedby="busqueda-error">
+          <p id="busqueda-error" class="campo__error" hidden></p>
+        </div>
+        <div class="acciones">
+          <button class="boton boton--primario" type="submit">Buscar</button>
+        </div>
+      </form>
+      <div id="zona-usuarios"></div>
+    </section>
+
+    <dialog class="dialogo" id="dialogo-profesional" aria-labelledby="titulo-dialogo-profesional">
+      <h2 id="titulo-dialogo-profesional">Editar profesional</h2>
+      <form id="form-profesional" class="formulario" novalidate>
+        <div id="resultado-profesional"></div>
+        <div class="campo">
+          <label for="prof-nombre">Nombre público <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <input class="control" id="prof-nombre" name="nombrePublico" maxlength="120" required
+                 aria-describedby="prof-nombre-ayuda prof-nombre-error">
+          <p id="prof-nombre-ayuda" class="campo__ayuda">Es el nombre que ven los pacientes, por ejemplo "Dra. Laura Gómez".</p>
+          <p id="prof-nombre-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="prof-especialidad">Especialidad <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <select class="control" id="prof-especialidad" name="especialidad" required aria-describedby="prof-especialidad-error"></select>
+          <p id="prof-especialidad-error" class="campo__error" hidden></p>
+        </div>
+        <div class="campo">
+          <label for="prof-registro">Registro profesional (opcional)</label>
+          <input class="control" id="prof-registro" name="registro" maxlength="40" aria-describedby="prof-registro-error">
+          <p id="prof-registro-error" class="campo__error" hidden></p>
+        </div>
+        <div class="acciones">
+          <button class="boton boton--primario" type="submit">Guardar</button>
+          <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialogo" id="dialogo-rol" aria-labelledby="titulo-dialogo-rol">
+      <h2 id="titulo-dialogo-rol">Cambiar rol</h2>
+      <p id="rol-usuario" class="texto-suave"></p>
+      <form id="form-rol" class="formulario" novalidate>
+        <div id="resultado-rol"></div>
+        <div class="campo">
+          <label for="rol">Nuevo rol <span class="campo__requerido" aria-hidden="true">*</span></label>
+          <select class="control" id="rol" name="rol" required>
+            <option value="profesional">Profesional</option>
+            <option value="admin">Administración</option>
+            <option value="paciente">Paciente</option>
+          </select>
+        </div>
+        <div id="campos-profesional">
+          <div class="campo">
+            <label for="rol-especialidad">Especialidad <span class="campo__requerido" aria-hidden="true">*</span></label>
+            <select class="control" id="rol-especialidad" name="especialidad" aria-describedby="rol-especialidad-error"></select>
+            <p id="rol-especialidad-error" class="campo__error" hidden></p>
+          </div>
+          <div class="campo">
+            <label for="rol-nombre">Nombre público (opcional)</label>
+            <input class="control" id="rol-nombre" name="nombrePublico" maxlength="120" aria-describedby="rol-nombre-ayuda">
+            <p id="rol-nombre-ayuda" class="campo__ayuda">Si lo dejas vacío, se usan los nombres del perfil.</p>
+          </div>
+        </div>
+        <div class="acciones">
+          <button class="boton boton--primario" type="submit">Asignar rol</button>
+          <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="profesionales.js"></script>
+</body>
+</html>
