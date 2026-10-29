@@ -120,6 +120,11 @@ h3 {
   margin: 0 0 var(--esp-3);
 }
 
+/* Un h2 que sigue a otro contenido abre una sección nueva: necesita aire arriba. */
+* + h2 {
+  margin-top: var(--esp-6);
+}
+
 h1 { font-size: var(--texto-h1); }
 h2 { font-size: var(--texto-h2); }
 h3 { font-size: var(--texto-h3); }
