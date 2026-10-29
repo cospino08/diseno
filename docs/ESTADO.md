@@ -3,7 +3,7 @@
 Tablero compartido de los 4 agentes. Cada uno actualiza **solo su sección** al terminar cada
 sesión. Para pedirle algo a otro agente, escríbelo en la sección **Pedidos** del dueño.
 
-Ronda actual: **1**
+Ronda actual: **2**. Lo que falta, por agente: `docs/PENDIENTE.md`.
 
 Supabase Project URL: `https://oziwvgyddccfjxrcexnd.supabase.co`
 Configuración lista en `assets/js/config.js` (exporta `SUPABASE_URL` y `SUPABASE_ANON_KEY`, con la
@@ -72,8 +72,7 @@ valida el rol por dentro. **P3 y P4: ya pueden probar contra la base real.**
 
 **Pendiente:**
 
-- Que el humano ejecute los scripts en Supabase (ver abajo) y confirme que
-  `pruebas_seguridad.sql` da todo PASA allí.
+- ✅ _(coordinación)_ Scripts ejecutados en Supabase: 62/62 PASA.
 - Pruebas desde el navegador (`docs/modelo_datos/pruebas_seguridad.md`, sección 2) cuando
   haya páginas publicadas.
 - Atender pedidos de P3 y P4 sobre el contrato.
@@ -262,6 +261,9 @@ contrato.
 ---
 
 ## Pedidos para el coordinador (humano)
+
+✅ _(coordinación, 28/10)_ Hechos los dos pedidos: Redirect URLs y contraseña mínima de 8.
+GitHub Pages activo en `https://cospino08.github.io/diseno/`.
 
 - *(de P3)* En Supabase, en **Authentication → URL Configuration**, agrega a *Redirect
   URLs* la URL de GitHub Pages (`https://cospino08.github.io/diseno/**`) y
