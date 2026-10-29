@@ -2,14 +2,21 @@
 // ui/mensajes.js: traduce los errores de Supabase a mensajes claros en español.
 // Dueño: P3. Lo usan P3 y P4.
 //
-// Por qué existe: las RPC de P2 lanzan códigos como 'FRANJA_OCUPADA' (plan,
-// sección 7). Supabase Auth y PostgREST devuelven textos técnicos en inglés
+// Por qué existe: las RPC de P2 lanzan códigos como 'FRANJA_OCUPADA'
+// (docs/contrato_api.md, sección 4). Supabase Auth y PostgREST devuelven textos técnicos en inglés
 // ('Invalid login credentials', 'JWT expired'…). El usuario nunca debe ver esos
 // textos (enunciado 5.2: "mensajes claros"). Este módulo convierte CUALQUIER
 // error en uno de nuestros códigos y cada código en un texto.
 //
+// Acepta los dos formatos de error que circulan en el proyecto:
+//   - el error original de supabase-js ({ message, code, status }), y
+//   - el error ya normalizado por assets/js/datos/respuesta.js (P4):
+//     { codigo, detalle }. Sus códigos técnicos (ERROR_RED, DUPLICADO,
+//     ERROR_DESCONOCIDO…) se traducen a los de este catálogo.
+//
 // API:
 //   codigoDeError(error)  → 'FRANJA_OCUPADA' | 'SIN_CONEXION' | … | 'DESCONOCIDO'
+//                           (error de supabase-js o { codigo, detalle } de datos/)
 //   mensajeDeError(error) → texto para mostrar al usuario
 //   MENSAJES              → { CODIGO: 'texto' } (solo lectura)
 //   nombreEstado(estado)  → 'no_asistio' → 'No asistió'
@@ -41,17 +48,21 @@ export const MENSAJES = Object.freeze({
 
   // --- Administración ---
   HORARIO_SUPERPUESTO: 'Ese horario se cruza con franjas que el profesional ya tiene.',
-  // Código PROPUESTO para el trigger de P12 (mover o desactivar una franja con
-  // cita activa). Aún no está en el contrato: pedido a P2 en docs/ESTADO.md.
+  // Trigger de P12: mover o desactivar una franja con cita activa (contrato 4.2).
   FRANJA_CON_CITA:
     'Esa franja tiene una cita activa. Cancela primero la cita para poder modificarla.',
 
   // --- Permisos ---
   NO_AUTORIZADO: 'No tienes permiso para realizar esta acción.',
 
-  // --- Datos (errores de PostgreSQL) ---
+  // --- Datos ---
+  // DATOS_INVALIDOS lo lanzan las RPC (contrato 4.2); DATO_INVALIDO sale de un
+  // CHECK de PostgreSQL (23514). Para el usuario significan lo mismo.
+  DATOS_INVALIDOS: 'Algún dato no es válido. Revisa la información e inténtalo de nuevo.',
   DATO_DUPLICADO: 'Ese dato ya está registrado. Revisa la información.',
+  DOCUMENTO_DUPLICADO: 'Ese número de documento ya está registrado en otra cuenta.',
   DATO_INVALIDO: 'Algún dato no es válido. Revisa el formulario.',
+  EN_USO: 'No se puede completar porque otros registros dependen de este.',
   NO_ENCONTRADO: 'No encontramos lo que buscabas. Puede que ya no exista.',
 
   // --- Autenticación ---
@@ -112,6 +123,20 @@ const TEXTOS_AUTH = [
   [/jwt expired|invalid jwt|refresh token/i, 'SESION_EXPIRADA'],
 ];
 
+// Códigos técnicos de assets/js/datos/respuesta.js (P4) que en este catálogo
+// tienen otro nombre. Los demás (NO_AUTORIZADO, SESION_EXPIRADA,
+// HORARIO_SUPERPUESTO, EN_USO y todos los del contrato) se llaman igual.
+const EQUIVALENCIAS_DATOS = {
+  ERROR_RED: 'SIN_CONEXION',
+  DUPLICADO: 'DATO_DUPLICADO',
+  ERROR_DESCONOCIDO: 'DESCONOCIDO',
+};
+
+// PostgreSQL incluye en el mensaje el nombre de la restricción que falló
+// (contrato 4.3). Con eso se da un mensaje más preciso que "dato duplicado".
+const RESTRICCION_DOCUMENTO = /uq_profiles_documento/;
+const RESTRICCION_CHECK = /\bck_[a-z_]+/;
+
 // Errores de red: fetch lanza TypeError y supabase-js los envuelve en
 // AuthRetryableFetchError. El texto cambia según el navegador.
 const TEXTO_RED = /failed to fetch|networkerror|load failed|network request failed|fetch failed/i;
@@ -123,6 +148,9 @@ const TEXTO_RED = /failed to fetch|networkerror|load failed|network request fail
  */
 export function codigoDeError(error) {
   if (!error) return null;
+
+  // 0. Error ya normalizado por datos/respuesta.js: { codigo, detalle }.
+  if (typeof error.codigo === 'string') return desdeCapaDeDatos(error);
 
   const texto = String(error.message ?? error);
 
@@ -136,6 +164,7 @@ export function codigoDeError(error) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'SIN_CONEXION';
 
   // 3. Códigos de Auth y de PostgreSQL/PostgREST.
+  if (error.code === '23505' && RESTRICCION_DOCUMENTO.test(texto)) return 'DOCUMENTO_DUPLICADO';
   if (error.code && CODIGOS_AUTH[error.code]) return CODIGOS_AUTH[error.code];
   if (error.code && CODIGOS_POSTGRES[error.code]) return CODIGOS_POSTGRES[error.code];
 
@@ -149,6 +178,18 @@ export function codigoDeError(error) {
   if (error.status === 403) return 'NO_AUTORIZADO';
 
   return 'DESCONOCIDO';
+}
+
+/**
+ * Traduce un error de datos/respuesta.js. `detalle` es el mensaje original de
+ * Supabase: solo se mira para reconocer la restricción, nunca se muestra.
+ */
+function desdeCapaDeDatos({ codigo, detalle = '' }) {
+  if (codigo === 'DUPLICADO' && RESTRICCION_DOCUMENTO.test(detalle)) return 'DOCUMENTO_DUPLICADO';
+  // respuesta.js no reconoce el 23514 (CHECK): llega como ERROR_DESCONOCIDO.
+  if (codigo === 'ERROR_DESCONOCIDO' && RESTRICCION_CHECK.test(detalle)) return 'DATO_INVALIDO';
+  const propio = EQUIVALENCIAS_DATOS[codigo] ?? codigo;
+  return propio in MENSAJES ? propio : 'DESCONOCIDO';
 }
 
 /**
