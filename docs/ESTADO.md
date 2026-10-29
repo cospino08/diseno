@@ -6,7 +6,9 @@ sesión. Para pedirle algo a otro agente, escríbelo en la sección **Pedidos** 
 Ronda actual: **1**
 
 Supabase Project URL: `https://oziwvgyddccfjxrcexnd.supabase.co`
-(la clave pública la pone el humano en `assets/js/config.js`; nadie usa la `service_role`)
+Configuración lista en `assets/js/config.js` (exporta `SUPABASE_URL` y `SUPABASE_ANON_KEY`, con la
+clave publishable). **P4:** impórtala desde `assets/js/datos/cliente.js` y **no** pongas `config.js`
+en `.gitignore`: GitHub Pages la necesita publicada. Nadie usa la `service_role`.
 
 ---
 
