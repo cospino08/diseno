@@ -1,0 +1,30 @@
+# .gitignore del proyecto (responsable: P4).
+#
+# OJO: assets/js/config.js NO se ignora. Contiene solo la URL del proyecto y la clave
+# pública (anon/publishable), que es pública por diseño; GitHub Pages la necesita
+# publicada para funcionar. La seguridad la dan las políticas RLS de Supabase.
+
+# Variables de entorno locales (por si alguien usa scripts locales). Nunca se suben.
+.env
+.env.*
+!.env.example
+
+# Archivos de claves privadas. Esto es solo una red de seguridad: la regla real es no
+# copiar nunca la service_role ni contraseñas dentro del repositorio (se revisa en cada PR).
+*.pem
+*.key
+
+# Carpeta local de la CLI de Supabase (si alguien la usa para pruebas)
+supabase/.temp/
+supabase/.branches/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Registros
+*.log
