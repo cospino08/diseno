@@ -7,7 +7,7 @@ Este documento es la **única fuente de verdad** sobre nombres de tablas, column
 RPC, parámetros y códigos de error. Si el frontend necesita algo distinto, se pide a P2 en
 `docs/ESTADO.md` (sección "Pedidos para P2"); P2 decide y actualiza este archivo.
 
-Versión: **1.1** (28/10/2026). Implementación: `sql/esquema.sql` y `sql/politicas_rls.sql`.
+Versión: **1.2** (29/10/2026). Implementación: `sql/esquema.sql` y `sql/politicas_rls.sql`.
 
 ---
 
@@ -213,6 +213,34 @@ await supabase.from('schedules')
 
 Para pantallas se recomiendan las RPC `mis_citas`, `mi_agenda` y `citas_admin`, que ya
 devuelven los datos aplanados (fecha, hora, nombres) y ordenados.
+
+#### Relaciones para embeber (`select` con tablas relacionadas)
+
+`appointments` tiene **exactamente una** FK hacia cada tabla, así que PostgREST embebe sin
+ambigüedad y no hace falta indicar el nombre de la restricción:
+
+| Embebido | Restricción | Columnas |
+| --- | --- | --- |
+| `schedules(...)` | `fk_appointments_schedule` | `(schedule_id, professional_id)` → `schedules(id, professional_id)` |
+| `professionals(...)` | `appointments_professional_id_fkey` | `professional_id` → `professionals(id)` |
+| `profiles(...)` | `appointments_patient_id_fkey` | `patient_id` → `profiles(id)` (solo útil para el admin: el paciente y el profesional no leen perfiles ajenos) |
+
+Verificado con PostgREST v12.2.3 (la versión de Supabase) el 29/10/2026. Esta consulta
+funciona tal cual para paciente y admin:
+
+```js
+supabase.from('appointments').select(`
+  id, estado,
+  franja:schedules ( fecha, hora_inicio, hora_fin ),
+  profesional:professionals ( nombre_publico, especialidad:specialties ( nombre ) )
+`)
+```
+
+> **Cuidado con el embebido de `professionals` para el paciente:** la RLS solo le deja ver
+> profesionales **activos**. Si una cita antigua es de un profesional que luego se
+> desactivó, `profesional` llega como `null`. `mis_citas()` no tiene ese problema (lee como
+> `security definer`) y además ordena por fecha y calcula `puede_cancelar`. Por eso es la
+> opción recomendada para "Mis citas".
 
 ### 2.6 `status_history` (historial de estados). Solo lectura
 
@@ -538,7 +566,7 @@ para el usuario en `assets/js/ui/mensajes.js`.
 
 | `error.code` | Significado | Ejemplo | Mensaje sugerido |
 | --- | --- | --- | --- |
-| `42501` | Permiso denegado (sin sesión, escritura directa no permitida, o fila rechazada por RLS). | `anon` llama una RPC; un paciente hace `update` de `rol`. Según la versión de PostgREST, `anon` puede recibir HTTP `401` en lugar de `42501`. | "No tienes permiso para realizar esta acción." |
+| `42501` | Permiso denegado (sin sesión, escritura directa no permitida, o fila rechazada por RLS). | `anon` llama una RPC; un paciente hace `update` de `rol`. Con PostgREST v12, `anon` recibe HTTP `401` y un usuario con sesión HTTP `403`; en ambos casos `error.code` es `42501`. | "No tienes permiso para realizar esta acción." |
 | `23P01` | Dos admins crean a la vez franjas que se cruzan (caso raro; normalmente llega `HORARIO_SUPERPUESTO`). | insert en `schedules`. | Igual que `HORARIO_SUPERPUESTO`. |
 | `23505` | Valor duplicado. `error.message` incluye el nombre de la restricción: `uq_profiles_documento`, `uq_specialties_nombre`, `uq_professionals_registro`. | Documento ya registrado. | "Ya existe un registro con ese documento / nombre." |
 | `23514` | Falla una regla CHECK. El mensaje incluye el nombre: `ck_profiles_documento`, `ck_profiles_telefono`, `ck_profiles_fecha_nacimiento`, `ck_profiles_nombres`, `ck_specialties_nombre`, `ck_schedules_horas`… | Teléfono con letras. | "Revisa el formato del campo." |
@@ -585,5 +613,6 @@ para el usuario en `assets/js/ui/mensajes.js`.
 
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
+| 1.2 | 29/10/2026 | Respuesta a los pedidos de la ronda 2: nombres de las FK para embeber (§2.5) verificados con PostgREST v12, aviso sobre profesionales inactivos al embeber y códigos HTTP reales de `42501`. Sin cambios de nombres ni firmas. |
 | 1.1 | 28/10/2026 | Tras implementar y probar el SQL: `cambiar_estado_cita` con el mismo estado solo guarda observaciones; `franjas_disponibles` devuelve vacío para cuentas desactivadas; se documentan `23P01` y el posible `401` para `anon`. Sin cambios de nombres ni firmas. |
 | 1.0 | 28/10/2026 | Versión inicial. Respecto a la sección 7 del plan, se añaden: `rol_actual`, `mis_citas`, `citas_admin`, `cambiar_activo_perfil`, `anonimizar_paciente`; los códigos `FRANJA_CON_CITA` y `DATOS_INVALIDOS`; la columna `cancelado_por` en `appointments` y `email` en `profiles`; `p_observaciones` en `cambiar_estado_cita` y `p_agrupacion` en `indicadores_citas`. |
