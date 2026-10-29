@@ -124,90 +124,64 @@ valida el rol por dentro. **P3 y P4: ya pueden probar contra la base real.**
   nombre `<img src=x onerror=alert(1)>`.
 - (P1) Te asigné CP-19 (rol falso en el registro) y CP-23 (historial e insert directo), además
   de los del plan. Inclúyelos en `sql/pruebas_seguridad.sql` si aplica.
-- *(de P3, 28/10)* Para las vistas del paciente necesito que `docs/contrato_api.md` defina:
-  1. **Columnas exactas que devuelve `franjas_disponibles`**. Propuesta: `schedule_id`,
-     `fecha`, `hora_inicio`, `hora_fin`, `professional_id`, `profesional` (nombre público),
-     `specialty_id`, `especialidad`. Además, que `p_profesional` y `p_fecha` acepten `null`
-     (cualquier profesional).
-  2. **Cómo lee el paciente "Mis citas"** con el nombre del profesional y la especialidad
-     (¿vista `v_mis_citas` o `select` con relaciones embebidas?). Necesito `id`, `fecha`,
-     `hora_inicio`, `hora_fin`, `profesional`, `especialidad`, `estado`, `motivo`, `cancelled_at`
-     y, si es posible, quién canceló, para mostrar "Cancelada por la institución" (plan, P12).
-  3. **Cómo se listan los profesionales para el filtro** (¿`v_profesionales_publicos`?).
-  4. **Columnas de `profiles`** (uso `id, nombres, documento, telefono, fecha_nacimiento,
-     rol, activo`) y si `documento` es `UNIQUE`.
-  5. Que las RPC lancen el código **al inicio** del mensaje (`raise exception
-     'FRANJA_OCUPADA'` o `'TRANSICION_INVALIDA: …'`). `assets/js/ui/mensajes.js` lo
-     detecta así.
-  6. **Código de error del trigger de P12** (mover o desactivar una franja con cita activa).
-     Propongo `FRANJA_CON_CITA`; ya está en `mensajes.js`.
+- ✅ *(de P3, 28/10)* Columnas de `franjas_disponibles`, `mis_citas`, profesionales, `profiles`,
+  códigos al inicio del mensaje y `FRANJA_CON_CITA`: resuelto por el contrato v1.1. Gracias.
 
 ---
 
 ## P3: Interfaz, acceso y paciente
 
-Rama `p3/interfaz`. Ronda 1 terminada y adelanté la base de la ronda 2 que no depende del
-contrato.
+Rama `p3/ronda2` (desde `origin/main` el 29/10). La ronda 1 (`p3/interfaz`) ya está en `main`.
 
-**Hecho:**
+**Hecho (ronda 2, 29/10/2026):**
 
-- `docs/investigacion_plataformas.md`: comparación de Doctoralia y Zocdoc con 5 fuentes
-  enlazadas (consultadas el 28/10/2026) y 10 hallazgos convertidos en decisiones de diseño.
-  **Limitación:** la página de inicio de Zocdoc respondió HTTP 403 a la herramienta. Lo de
-  Zocdoc sale de sus páginas oficiales de políticas, y los puntos sin confirmar están
-  marcados "no verificado". Conviene que una persona los revise en el navegador.
-- `docs/wireframes/`: inventario de las 17 pantallas, mapa de navegación por rol (Mermaid),
-  wireframes ASCII a 360 px de acceso, paciente, profesional y admin (estos dos últimos en
-  baja fidelidad para P4), los 5 estados de interfaz y el conteo de la reserva: **4 pasos**
-  (máximo 5, RNF-03).
-- `docs/wireframes/guia_estilos.html`: todos los componentes con datos ficticios
-  (referencia para P4).
-- `assets/css/` (`base.css`, `componentes.css` y `responsive.css`): mobile first, colores
-  medidos contra WCAG AA, foco visible y tablas que pasan a tarjetas en móvil.
-- `assets/js/ui/`: `mensajes.js`, `estados.js`, `dialogo.js`, `formato.js` y
-  `formularios.js`, cada uno con su API documentada en la cabecera.
-- `assets/js/validacion.js` y `assets/js/auth.js` (registro, inicio y cierre de sesión,
-  recuperación, `protegerPagina` por rol, perfil completo obligatorio y sesión expirada).
-- `index.html` (inicio de sesión y recuperación) y `registro.html`.
-- Verificado en Chromium headless: sin desplazamiento horizontal a 360 px y a 1024 px,
-  todos los controles con `label`, foco en el primer error, nombre con
-  `<img onerror>` mostrado como texto y credenciales inválidas traducidas desde la
-  respuesta real de Supabase Auth.
+- `auth.js` importa el cliente desde `assets/js/datos/cliente.js`; se quitó el temporal. Si la
+  base responde "sesión expirada", ahora se olvida la sesión local antes de ir al inicio de
+  sesión (antes `index.html` podía devolver al usuario a la página privada).
+- `ui/mensajes.js` acepta también los errores de `datos/respuesta.js` (`{ codigo, detalle }`)
+  y traduce **todos** los códigos del contrato v1.1 (4.2), los técnicos de P4 (`ERROR_RED`,
+  `DUPLICADO`, `EN_USO`, `ERROR_DESCONOCIDO`…) y `23505` de `uq_profiles_documento`
+  ("Ese número de documento ya está registrado en otra cuenta").
+- `validacion.js` igualado a los CHECK de `profiles` (documento 4 a 20; teléfono máximo 20).
+- Vistas del paciente en `paciente/`: `index.html` (P-01), `buscar.html` (P-02,
+  `franjas_disponibles`), `reservar.html` (P-03, `reservar_cita`; ante `FRANJA_OCUPADA`,
+  `FRANJA_PASADA` o `FRANJA_NO_EXISTE` vuelve a buscar, avisa y recarga), `mis-citas.html`
+  (P-04, `mis_citas` y `cancelar_cita` con diálogo; "Cancelada por la institución" con
+  `cancelado_por`) y `perfil.html` (P-05). Reserva en **4 pasos** después de iniciar sesión.
+- Pruebas en `docs/pruebas/`: CP-01, 05, 07, 08, 14, 16, 18, 20, 21 y 26, con capturas en
+  `docs/pruebas/capturas/`, en el formato de `plantilla_evidencia.md` de P1. **Ojo:** la
+  ejecución 1 es de la interfaz con respuestas de Supabase **simuladas** según el contrato
+  (57/57 comprobaciones); la ejecución 2 contra la base real queda **pendiente** y cada ficha
+  trae los pasos.
 
-**Pendiente (ronda 2, cuando el contrato esté en main):**
+**Pendiente:**
 
-- Vistas `paciente/`: inicio, buscar (`franjas_disponibles`), confirmar (`reservar_cita`,
-  que recarga la disponibilidad si llega `FRANJA_OCUPADA`), mis citas con cancelación y
-  perfil.
-- Quitar el cliente temporal de `auth.js` cuando exista `assets/js/datos/cliente.js`.
-- Pruebas CP-01, 05, 07, 08, 14, 16 y 18 con evidencia en `docs/pruebas/`.
-- Probar registro, confirmación de correo y recuperación de punta a punta, cuando estén el
-  SQL (trigger de perfiles) y la configuración de Auth.
+- Ejecución 2 de mis 10 casos en `https://cospino08.github.io/diseno/` con las cuentas demo
+  (la hace una persona: los agentes no tienen las contraseñas).
+- Probar registro, confirmación de correo y recuperación de contraseña de punta a punta.
+- Cuando P4 agregue `misCitas()` a `datos/citas.js`, usarla en `paciente/comun.js` (TODO
+  marcado).
+- Ronda 3: CP-05, CP-18 y CP-20 en las vistas de `profesional/` y `admin/` de P4, y revisión
+  de accesibilidad y 360 px de **todas** las pantallas.
 
 **Bloqueos:**
 
-- Sin `docs/contrato_api.md` no puedo programar buscar, reservar ni mis citas (ver los
-  pedidos a P2).
-- `profiles` aún no existe en Supabase: el inicio de sesión con una cuenta real fallará al
-  leer el perfil hasta que se ejecute el SQL.
+- Ninguno para el código. Las ejecuciones contra la base real dependen de una persona con
+  las contraseñas demo.
 
 **Pedidos para P3:**
 
-- _(de P4)_ El cliente ya existe: `import { supabase } from '<ruta>/assets/js/datos/cliente.js'`
-  (PR #2). Para tablas y RPC usa mejor `datos/citas.js`, `catalogos.js` y `perfiles.js`:
-  devuelven `{ data, error }` con `error.codigo` del contrato.
-- _(de P4)_ Que `ui/mensajes.js` traduzca, además de los códigos de las RPC, estos códigos
-  técnicos de `datos/respuesta.js`: `ERROR_RED`, `SESION_EXPIRADA`, `NO_AUTORIZADO`,
-  `HORARIO_SUPERPUESTO`, `DUPLICADO`, `EN_USO`, `ERROR_DESCONOCIDO`.
-- _(de P4)_ Para las páginas de `profesional/` y `admin/` necesito: una guarda por rol en
-  `auth.js` (algo como `exigirRol('profesional')`), los estados de `ui/estados.js` y clases
-  CSS para tabla, formulario, botón primario/secundario, insignia de estado de cita y
-  diálogo de confirmación. Cuando estén, anota aquí su API y la uso tal cual.
-- (P1) Cuando tengas la comparación de 2 plataformas, avísame la ruta (sugerida:
-  `docs/investigacion/comparacion_plataformas.md`) con enlaces y fecha de consulta; la
-  integro en el documento final.
-- (P1) Te asigné CP-20 (acceso por rol), CP-21 (perfil incompleto) y CP-26 (mensajes y
-  estados), además de los del plan. Ver `docs/pruebas/plan_pruebas.md`.
+- ✅ _(de P4)_ Importar el cliente desde `datos/cliente.js` y usar `datos/`: hecho. Las vistas
+  usan `franjasDisponibles`, `reservarCita`, `cancelarCita`, `listarEspecialidades`,
+  `listarProfesionales` y `actualizarMiPerfil`.
+- ✅ _(de P4)_ Traducir `ERROR_RED`, `SESION_EXPIRADA`, `NO_AUTORIZADO`,
+  `HORARIO_SUPERPUESTO`, `DUPLICADO`, `EN_USO`, `ERROR_DESCONOCIDO`: hecho. Puedes pasar el
+  `error` de tus funciones directo a `mostrarError(zona, error)` o `mensajeDeError(error)`.
+- ✅ _(de P4)_ Guarda por rol, estados, clases CSS y diálogo: ya estaban en `main` (API en la
+  sección de P4, abajo, y en `docs/wireframes/guia_estilos.html`).
+- ✅ (P1) Comparación de plataformas: está en `docs/investigacion_plataformas.md`.
+- ✅ (P1) CP-20, CP-21 y CP-26: documentados (CP-20 parcial: falta el caso con
+  `admin/resumen.html`, que es de P4).
 
 ---
 
@@ -246,10 +220,14 @@ contrato.
 - (P1) Te asigné CP-22 (agenda propia), CP-24 (especialidades), CP-25 (asignar rol) y CP-27
   (desactivar y anonimizar), además de los del plan.
 - (P1) Avísame la ruta del diagrama de arquitectura para integrarlo en el documento final.
-- *(de P3, 28/10)* En `assets/js/datos/cliente.js`, exporta el cliente con **nombre**:
-  `export const supabase = createClient(...)`. `auth.js` también acepta `export default`,
-  pero el nombre deja el código más claro. Mientras no exista, `auth.js` usa un cliente
-  temporal.
+- ✅ *(de P3, 28/10)* Exportar el cliente con nombre en `datos/cliente.js`: hecho; `auth.js` ya
+  lo importa.
+- *(de P3, 29/10)* En `datos/citas.js`, agrega `misCitas()` → `rpc('mis_citas')` (contrato 3.5).
+  Mientras tanto la llamo desde `paciente/comun.js`. `listarMisCitas()` (select a
+  `appointments`) ya no la uso: puedes quitarla o dejarla para otro uso.
+- *(de P3, 29/10)* En `datos/respuesta.js`, el `23514` (CHECK) cae en `ERROR_DESCONOCIDO`.
+  Sugiero devolver `DATOS_INVALIDOS`. Por ahora `mensajes.js` lo reconoce por el nombre
+  `ck_…` en `detalle`.
 - *(de P3)* Para tus páginas, reutiliza:
   - `protegerPagina({ roles: ['profesional'] })` o `['admin']`, de `assets/js/auth.js`.
     Muestra "Acceso denegado" y prepara el menú.
@@ -265,6 +243,11 @@ contrato.
 ✅ _(coordinación, 28/10)_ Hechos los dos pedidos: Redirect URLs y contraseña mínima de 8.
 GitHub Pages activo en `https://cospino08.github.io/diseno/`.
 
+- *(de P3, 29/10)* Cuando `p3/ronda2` esté en `main` y publicado: hacer la **ejecución 2** de
+  CP-01, 05, 07, 08, 14, 16, 18, 20, 21 y 26 con las cuentas demo, siguiendo la sección
+  "Pasos para la ejecución 2" de cada `docs/pruebas/CP-XX.md`, y guardar las capturas como
+  `docs/pruebas/capturas/CP-XX-real-N.png` (sin contraseñas visibles). Para CP-21 hace falta
+  una cuenta con perfil incompleto (`nuevo1@demo.test` o una registrada en el momento).
 - *(de P3)* En Supabase, en **Authentication → URL Configuration**, agrega a *Redirect
   URLs* la URL de GitHub Pages (`https://cospino08.github.io/diseno/**`) y
   `http://localhost:8000/**`. Sin eso, los enlaces de confirmación y de recuperación de
