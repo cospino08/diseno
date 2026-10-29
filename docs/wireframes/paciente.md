@@ -18,7 +18,7 @@ paciente (ver A-04 en [`acceso.md`](acceso.md)) y exigen un perfil completo, sal
 │                                      │
 │ Tu próxima cita                 (h2) │
 │ ┌──────────────────────────────────┐ │
-│ │ mié 29 oct 2026 · 08:30          │ │
+│ │ jue 29 oct 2026 · 08:30          │ │
 │ │ {Dra. Laura Gómez}               │ │
 │ │ {Medicina general}               │ │
 │ │ ( Programada )                   │ │  etiqueta de estado con texto
@@ -50,7 +50,7 @@ botón "Reintentar".
 │ │ [           Buscar           ]   │ │  paso 2
 │ └──────────────────────────────────┘ │
 │                                      │
-│ 6 horas disponibles el mié 29 oct    │  aria-live="polite"
+│ 6 horas disponibles el jue 29 oct    │  aria-live="polite"
 │                                 (h2) │
 │ ┌──────────────────────────────────┐ │
 │ │ Dra. Laura Gómez            (h3) │ │
@@ -93,7 +93,7 @@ disponibles para esa fecha" con el botón "Ver el día siguiente". *Error* de re
 ├──────────────────────────────────────┤
 │ Confirma tu cita                (h1) │
 │ ┌ resumen (dl) ────────────────────┐ │
-│ │ Fecha         mié 29 oct 2026    │ │
+│ │ Fecha         jue 29 oct 2026    │ │
 │ │ Hora          08:30 – 09:00      │ │
 │ │ Profesional   Dra. Laura Gómez   │ │
 │ │ Especialidad  Medicina general   │ │
@@ -116,7 +116,7 @@ disponibles para esa fecha" con el botón "Ver el día siguiente". *Error* de re
 │ ✔ ¡Cita reservada!              (h1) │
 │ Tu cita quedó registrada con estado  │
 │ Programada.                          │
-│ mié 29 oct 2026 · 08:30              │
+│ jue 29 oct 2026 · 08:30              │
 │ Dra. Laura Gómez · Medicina general  │
 │ Puedes cancelarla hasta 2 horas      │
 │ antes desde Mis citas.               │
@@ -150,7 +150,7 @@ disponibles para esa fecha" con el botón "Ver el día siguiente". *Error* de re
 │ [ Próximas | Historial ]             │  pestañas (role=tablist)
 │                                      │
 │ ┌──────────────────────────────────┐ │
-│ │ mié 29 oct 2026 · 08:30     (h2) │ │
+│ │ jue 29 oct 2026 · 08:30     (h2) │ │
 │ │ Dra. Laura Gómez                 │ │
 │ │ Medicina general                 │ │
 │ │ ( Programada )                   │ │
@@ -158,7 +158,7 @@ disponibles para esa fecha" con el botón "Ver el día siguiente". *Error* de re
 │ │ [ Cancelar cita ]                │ │  peligro, solo si faltan > 2 h
 │ └──────────────────────────────────┘ │
 │ ┌──────────────────────────────────┐ │
-│ │ jue 30 oct 2026 · 07:00          │ │
+│ │ vie 30 oct 2026 · 07:00          │ │
 │ │ Dr. Andrés Ruiz · Pediatría      │ │
 │ │ ( Confirmada )                   │ │
 │ │ Ya no se puede cancelar en línea │ │  faltan < 2 h
@@ -173,7 +173,7 @@ Diálogo de confirmación (`<dialog>` modal, foco atrapado y Esc para cerrar):
 ```
 ┌────────────────────────────────┐
 │ ¿Cancelar esta cita?      (h2) │
-│ mié 29 oct · 08:30             │
+│ jue 29 oct · 08:30             │
 │ Dra. Laura Gómez               │
 │ La hora quedará libre para     │
 │ otra persona.                  │

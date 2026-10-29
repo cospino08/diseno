@@ -33,7 +33,7 @@ Acción).
 ## R-02 Detalle de cita y cambio de estado (`profesional/cita.html?id=`)
 
 ```
-│ Cita del mié 29 oct · 08:00     (h1) │
+│ Cita del jue 29 oct · 08:00     (h1) │
 │ Paciente     Ana Pérez               │
 │ Teléfono     300 000 0001            │
 │ Motivo       {texto}                 │

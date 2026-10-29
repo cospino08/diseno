@@ -194,7 +194,7 @@ Para que el conteo se cumpla:
 | Botones | Un solo botón primario por pantalla. Las acciones destructivas (cancelar cita) usan el estilo `peligro` y piden confirmación. | Jerarquía visual y confirmación de acciones relevantes (5.2). |
 | Mensajes | Siempre en español claro y con la acción siguiente ("Elige otra hora"). Nunca se muestra el texto técnico de Supabase. Ver `assets/js/ui/mensajes.js`. | Mensajes claros (5.2). |
 | Estados | Toda zona que carga datos usa los 5 estados de [`estados.md`](estados.md). | Estados de interfaz (8.2). |
-| Fechas y horas | Formato `mié 29 oct 2026` y `08:30` (24 h), en hora de Bogotá (C8 del plan). | Evita ambigüedad AM/PM. |
+| Fechas y horas | Formato `jue 29 oct 2026` y `08:30` (24 h), en hora de Bogotá (C8 del plan). | Evita ambigüedad AM/PM. |
 | Estados de cita | Se muestran como etiqueta de color **con texto**: Programada, Confirmada, Atendida, Cancelada, No asistió. Nunca solo con color. | El color no puede ser el único indicador (WCAG 1.4.1). |
 | Datos de la base | Solo con `textContent` y `createElement`. Nunca `innerHTML`. | Evitar XSS (8.2, CP-18). |
 | Ancho mínimo | 360 px sin desplazamiento horizontal. Las tablas se convierten en tarjetas en pantallas estrechas. | RNF-04, CP-05. |
