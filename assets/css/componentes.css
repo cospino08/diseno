@@ -1,0 +1,553 @@
+/* =============================================================================
+   componentes.css: piezas reutilizables de la interfaz.
+   Dueño: P3. P4 usa estas mismas clases en profesional/ y admin/. No crear
+   otro sistema de estilos (regla del plan); si falta algo, pedirlo a P3 en
+   docs/ESTADO.md.
+
+   Nombres en español con el patrón bloque__elemento--variante (estilo BEM), para
+   que se sepa a qué componente pertenece cada clase.
+
+   Índice:
+     1. Botones              6. Etiquetas de estado de cita
+     2. Formularios          7. Franjas horarias (botones de hora)
+     3. Tarjetas y listas    8. Pestañas
+     4. Alertas              9. Diálogo modal
+     5. Estados de interfaz 10. Menú de navegación y aviso flotante
+                            11. Tablas
+   ============================================================================= */
+
+/* ---------- 1. Botones ----------
+   <button class="boton boton--primario">. Un solo botón primario por pantalla.
+   Las acciones destructivas usan boton--peligro y piden confirmación. */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  min-height: var(--objetivo-tactil);
+  padding: var(--esp-2) var(--esp-4);
+  border: 2px solid transparent;
+  border-radius: var(--radio);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.boton--primario {
+  background: var(--color-primario);
+  color: #fff;
+}
+
+.boton--primario:hover {
+  background: var(--color-primario-oscuro);
+  color: #fff;
+}
+
+.boton--secundario {
+  background: var(--color-superficie);
+  border-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+.boton--secundario:hover {
+  background: var(--info-fondo);
+  color: var(--color-primario-oscuro);
+}
+
+.boton--peligro {
+  background: var(--color-peligro);
+  color: #fff;
+}
+
+.boton--peligro:hover {
+  background: var(--color-peligro-oscuro);
+  color: #fff;
+}
+
+/* Botón con aspecto de enlace (acciones menores, como "Mostrar" contraseña). */
+.boton--enlace {
+  min-height: auto;
+  padding: var(--esp-1) var(--esp-2);
+  background: none;
+  color: var(--color-primario);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* Ancho completo: botón principal de los formularios en móvil. */
+.boton--bloque {
+  width: 100%;
+}
+
+.boton:disabled,
+.boton[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Grupo de botones que se apilan en móvil y se alinean en pantallas anchas. */
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  margin-top: var(--esp-5);
+}
+
+/* ---------- 2. Formularios ----------
+   Estructura de cada campo:
+     <div class="campo">
+       <label for="documento">Documento de identidad</label>
+       <input id="documento" name="documento" aria-describedby="documento-ayuda documento-error">
+       <p id="documento-ayuda" class="campo__ayuda">…</p>
+       <p id="documento-error" class="campo__error" hidden></p>
+     </div>
+   validacion.js llena .campo__error y pone aria-invalid="true" en el control. */
+
+.formulario {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+.campo {
+  display: grid;
+  gap: var(--esp-1);
+  min-width: 0; /* permite que el campo se encoja dentro de grid/flex */
+}
+
+.campo label,
+.campo legend {
+  font-weight: 600;
+}
+
+.campo__requerido {
+  color: var(--error-texto);
+}
+
+.campo__ayuda {
+  margin: 0;
+  font-size: var(--texto-pequeno);
+  color: var(--color-texto-suave);
+}
+
+.campo__error {
+  margin: 0;
+  font-size: var(--texto-pequeno);
+  font-weight: 600;
+  color: var(--error-texto);
+}
+
+/* El ícono va como texto en CSS para no repetirlo en el HTML; el lector de
+   pantalla lee el mensaje, que ya dice cuál es el problema. */
+.campo__error::before {
+  content: "⚠ ";
+}
+
+.control {
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: var(--esp-2) var(--esp-3);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+}
+
+textarea.control {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.control[aria-invalid="true"] {
+  border: 2px solid var(--color-peligro);
+}
+
+.control:disabled,
+.control[readonly] {
+  background: var(--neutro-fondo);
+}
+
+/* Campo de contraseña con el botón "Mostrar" al lado. */
+.control-con-boton {
+  display: flex;
+  gap: var(--esp-2);
+  align-items: stretch;
+}
+
+.control-con-boton .control {
+  flex: 1;
+  min-width: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* ---------- 3. Tarjetas y listas ---------- */
+
+.tarjeta {
+  padding: var(--esp-4);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta > :last-child {
+  margin-bottom: 0;
+}
+
+.tarjeta__titulo {
+  margin-bottom: var(--esp-1);
+  font-size: var(--texto-h3);
+}
+
+.tarjeta__meta {
+  margin: 0 0 var(--esp-2);
+  color: var(--color-texto-suave);
+}
+
+/* Lista de tarjetas: <ul class="lista-tarjetas"><li class="tarjeta">… */
+.lista-tarjetas {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Resumen de datos: <dl class="resumen"><div><dt>Fecha</dt><dd>…</dd></div></dl> */
+.resumen {
+  display: grid;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-4);
+}
+
+.resumen > div {
+  display: grid;
+  gap: 0 var(--esp-3);
+}
+
+.resumen dt {
+  font-weight: 600;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-pequeno);
+}
+
+.resumen dd {
+  margin: 0;
+}
+
+/* ---------- 4. Alertas ----------
+   <div class="alerta alerta--error" role="alert">. Siempre llevan texto: el
+   color nunca es el único indicador (WCAG 1.4.1). */
+
+.alerta {
+  display: flex;
+  gap: var(--esp-3);
+  align-items: flex-start;
+  padding: var(--esp-3) var(--esp-4);
+  margin-bottom: var(--esp-4);
+  border-left: 4px solid currentColor;
+  border-radius: var(--radio);
+}
+
+.alerta__icono {
+  flex: none;
+  font-weight: 700;
+}
+
+.alerta__cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.alerta__cuerpo > :last-child {
+  margin-bottom: 0;
+}
+
+.alerta__titulo {
+  display: block;
+  font-weight: 700;
+}
+
+.alerta--info     { color: var(--info-texto);   background: var(--info-fondo); }
+.alerta--exito    { color: var(--exito-texto);  background: var(--exito-fondo); }
+.alerta--aviso    { color: var(--aviso-texto);  background: var(--aviso-fondo); }
+.alerta--error    { color: var(--error-texto);  background: var(--error-fondo); }
+.alerta--denegado { color: var(--neutro-texto); background: var(--neutro-fondo); }
+
+/* Los enlaces dentro de una alerta usan el color de la alerta (contraste ya medido). */
+.alerta a {
+  color: inherit;
+  font-weight: 600;
+}
+
+/* ---------- 5. Estados de interfaz ----------
+   Los crea assets/js/ui/estados.js. Ver docs/wireframes/estados.md. */
+
+.estado {
+  display: grid;
+  justify-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-5) var(--esp-4);
+  text-align: center;
+  border-radius: var(--radio);
+}
+
+.estado > p {
+  margin: 0;
+}
+
+.estado--cargando {
+  color: var(--color-texto-suave);
+}
+
+.estado--vacio {
+  border: 2px dashed var(--color-borde-control);
+  color: var(--color-texto-suave);
+}
+
+/* Indicador giratorio. Es decorativo (aria-hidden); el texto dice qué pasa. */
+.indicador-carga {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--color-borde);
+  border-top-color: var(--color-primario);
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- 6. Etiquetas de estado de cita ----------
+   <span class="etiqueta etiqueta--programada">Programada</span>.
+   El nombre de la variante es el valor del enum estado_cita (plan, P1). */
+
+.etiqueta {
+  display: inline-block;
+  padding: 0.125rem var(--esp-2);
+  border-radius: 999px;
+  font-size: var(--texto-pequeno);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.etiqueta--programada { color: var(--info-texto);       background: var(--info-fondo); }
+.etiqueta--confirmada { color: var(--confirmada-texto); background: var(--confirmada-fondo); }
+.etiqueta--atendida   { color: var(--exito-texto);      background: var(--exito-fondo); }
+.etiqueta--cancelada  { color: var(--error-texto);      background: var(--error-fondo); }
+.etiqueta--no_asistio { color: var(--aviso-texto);      background: var(--aviso-fondo); }
+.etiqueta--activo     { color: var(--exito-texto);      background: var(--exito-fondo); }
+.etiqueta--inactivo   { color: var(--neutro-texto);     background: var(--neutro-fondo); }
+
+/* ---------- 7. Franjas horarias ----------
+   <ul class="franjas"><li><button class="franja">08:30</button></li></ul>
+   Una cuadrícula que se adapta sola al ancho disponible (auto-fill), sin media
+   queries: a 360 px caben 3 o 4 botones por fila. */
+
+.franjas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  gap: var(--esp-2);
+  margin: var(--esp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.franja {
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: var(--esp-2);
+  border: 2px solid var(--color-primario);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-primario);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.franja:hover {
+  background: var(--color-primario);
+  color: #fff;
+}
+
+/* ---------- 8. Pestañas ----------
+   role="tablist" > button role="tab" aria-selected. Se manejan con las flechas
+   izquierda y derecha (la lógica va en la página). */
+
+.pestanas {
+  display: flex;
+  gap: var(--esp-1);
+  margin-bottom: var(--esp-4);
+  border-bottom: 2px solid var(--color-borde);
+}
+
+.pestana {
+  flex: 1;
+  min-height: var(--objetivo-tactil);
+  padding: var(--esp-2) var(--esp-3);
+  margin-bottom: -2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--color-texto-suave);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pestana[aria-selected="true"] {
+  border-bottom-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+/* ---------- 9. Diálogo modal ----------
+   Se usa el <dialog> nativo con showModal(): atrapa el foco, cierra con Esc y
+   devuelve el foco al elemento que lo abrió. Lo crea assets/js/ui/dialogo.js. */
+
+.dialogo {
+  width: min(28rem, calc(100vw - 2rem));
+  padding: var(--esp-5);
+  border: 0;
+  border-radius: var(--radio);
+  box-shadow: 0 10px 30px rgb(16 24 40 / 0.25);
+  color: var(--color-texto);
+}
+
+.dialogo::backdrop {
+  background: rgb(16 24 40 / 0.55);
+}
+
+.dialogo .acciones {
+  margin-top: var(--esp-4);
+}
+
+/* ---------- 10. Menú de navegación y aviso flotante ---------- */
+
+/* El botón "Menú" solo existe en móvil y solo si hay JavaScript (clase .js en
+   <html>). Sin JavaScript el menú queda siempre visible y la navegación sigue
+   funcionando. */
+.menu__boton {
+  display: none;
+}
+
+.js .menu__boton {
+  display: inline-flex;
+}
+
+/* En móvil el <nav class="menu"> ocupa una fila completa debajo de la marca. */
+.menu {
+  flex-basis: 100%;
+}
+
+.menu__lista {
+  display: grid;
+  gap: var(--esp-1);
+  width: 100%;
+  margin: 0;
+  padding: 0 0 var(--esp-3);
+  list-style: none;
+}
+
+.js .menu__lista[data-abierto="false"] {
+  display: none;
+}
+
+.menu__enlace {
+  display: block;
+  padding: var(--esp-2) var(--esp-3);
+  border-radius: var(--radio);
+  color: var(--color-texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.menu__enlace:hover {
+  background: var(--neutro-fondo);
+  color: var(--color-texto);
+}
+
+/* La página actual se marca con aria-current="page", no solo con color. */
+.menu__enlace[aria-current="page"] {
+  background: var(--info-fondo);
+  color: var(--info-texto);
+  box-shadow: inset 4px 0 0 var(--color-primario);
+}
+
+.menu__usuario {
+  padding: var(--esp-2) var(--esp-3) 0;
+  border-top: 1px solid var(--color-borde);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-pequeno);
+}
+
+/* Región fija de avisos breves (la crea estados.js > avisar()). */
+.avisos {
+  position: fixed;
+  inset: auto var(--esp-4) var(--esp-4) var(--esp-4);
+  z-index: 50;
+  display: grid;
+  gap: var(--esp-2);
+  pointer-events: none;
+}
+
+.avisos .alerta {
+  margin: 0;
+  box-shadow: var(--sombra);
+  pointer-events: auto;
+}
+
+/* ---------- 11. Tablas ----------
+   En móvil, cada fila se ve como una tarjeta: cada <td> lleva data-etiqueta con
+   el nombre de su columna, que se muestra con ::before. En 768 px o más,
+   responsive.css devuelve el formato de tabla.
+   Ojo: algunos navegadores (Safari) pierden la semántica de tabla cuando las
+   filas cambian de display. Por eso estas tablas llevan roles explícitos:
+   role="table", "rowgroup", "row", "columnheader" y "cell". */
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla thead {
+  /* En móvil la cabecera se oculta visualmente pero sigue para lectores de pantalla. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.tabla tr {
+  display: block;
+  margin-bottom: var(--esp-3);
+  padding: var(--esp-3);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.tabla td {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-1) 0;
+  text-align: right;
+}
+
+.tabla td::before {
+  content: attr(data-etiqueta);
+  font-weight: 600;
+  color: var(--color-texto-suave);
+  text-align: left;
+}
