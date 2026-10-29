@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi agenda · Clínica San Rafael</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/componentes.css">
+  <link rel="stylesheet" href="../assets/css/responsive.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <!-- R-01 Agenda propia (docs/wireframes/profesional_admin.md). Responsable: P4. -->
+  <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__barra">
+      <a class="marca" href="agenda.html"><span class="marca__icono" aria-hidden="true">✚</span> Clínica San Rafael</a>
+      <button class="boton boton--secundario menu__boton" type="button"
+              aria-expanded="false" aria-controls="menu-principal">Menú</button>
+      <nav class="menu" aria-label="Principal">
+        <ul class="menu__lista" id="menu-principal" data-abierto="false">
+          <li><a class="menu__enlace" href="agenda.html">Mi agenda</a></li>
+          <li class="menu__usuario">
+            <span data-usuario></span>
+            <button class="boton boton--enlace" type="button" data-accion="cerrar-sesion">Cerrar sesión</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <h1>Mi agenda</h1>
+
+    <form id="form-dia" class="formulario formulario--doble" novalidate>
+      <div class="campo">
+        <label for="fecha">Día</label>
+        <input class="control" id="fecha" name="fecha" type="date" required>
+      </div>
+      <div class="campo">
+        <label for="estado">Estado</label>
+        <select class="control" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="programada">Programada</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="atendida">Atendida</option>
+          <option value="cancelada">Cancelada</option>
+          <option value="no_asistio">No asistió</option>
+        </select>
+      </div>
+      <div class="acciones campo--completo">
+        <button class="boton boton--secundario" type="button" id="dia-anterior">◂ Día anterior</button>
+        <button class="boton boton--secundario" type="button" id="hoy">Hoy</button>
+        <button class="boton boton--secundario" type="button" id="dia-siguiente">Día siguiente ▸</button>
+      </div>
+    </form>
+
+    <h2 id="titulo-dia">Citas del día</h2>
+    <p id="resumen-dia" class="texto-suave" role="status"></p>
+    <div id="zona-agenda"></div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor"><p>Proyecto académico. Datos ficticios.</p></div>
+  </footer>
+
+  <script type="module" src="agenda.js"></script>
+</body>
+</html>
